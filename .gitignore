@@ -1,0 +1,11 @@
+*
+
+!.gitignore
+
+!Makefile
+!*.asm
+!*.c
+!*.odin
+!*.ll
+
+*#*
