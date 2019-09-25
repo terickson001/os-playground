@@ -3,9 +3,18 @@
 !.gitignore
 
 !Makefile
-!*.asm
-!*.c
-!*.odin
-!*.ll
 
+!kernel
+!kernel/*
+    
+!libc
+!libc/*
+    
+!boot
+!boot/*
+boot/boot.bin
+    
+!drivers
+!drivers/*
+        
 *#*

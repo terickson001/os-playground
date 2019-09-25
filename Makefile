@@ -1,32 +1,46 @@
-# $@ = target file
-# $< = first dependency
-# $^ = all dependencies
+CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
 
-# First rule is the one executed when no parameters are fed to the Makefile
-all: run
+ODIR = obj
 
-# Notice how dependencies are built as needed
-kernel.bin: kernel_entry.o kernel.o
+SRCS = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
+DEPS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h)
+
+OBJS=$(addprefix $(ODIR)/, $(notdir $(SRCS:.c=.o)))
+
+CFLAGS = -g -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs -Wall -Wextra -Werror
+
+os-image.bin: boot/boot.bin kernel.bin
+	cat $^ > os-image.bin
+
+kernel.bin: ${ODIR}/kernel_entry.o ${ODIR}/interrupt.o ${OBJS} 
 	i386-elf-ld -o $@ -Ttext 0x1000 $^ --oformat binary
 
-kernel_entry.o: kernel_entry.asm
-	nasm $< -f elf -o $@
-
-kernel.o: kernel.c
-	i386-elf-gcc -ffreestanding -c $< -o $@
-
-# Rule to disassemble the kernel - may be useful to debug
-kernel.dis: kernel.bin
-	ndisasm -b 32 $< > $@
-
-boot.bin: boot.asm
-	nasm $< -f bin -o $@
-
-os-image.bin: boot.bin kernel.bin
-	cat $^ > $@
+kernel.elf: ${ODIR}/kernel_entry.o ${ODIR}/interrupt.o ${OBJS}
+	i386-elf-ld -o $@ -Ttext 0x1000 $^ 
 
 run: os-image.bin
-	qemu-system-i386 -fda $<
+	qemu-system-i386 -fda os-image.bin
+
+debug: os-image.bin kernel.elf
+	qemu-system-i386 -s -S -fda os-image.bin -d guest_errors,int &
+	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+
+${ODIR}/%.o: kernel/%.c ${DEPS}
+	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
+${ODIR}/%.o: drivers/%.c ${DEPS}
+	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
+${ODIR}/%.o: cpu/%.c ${DEPS}
+	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
+${ODIR}/%.o: libc/%.c ${DEPS}
+	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
+${ODIR}/interrupt.o: cpu/interrupt.asm
+	nasm $< -f elf -o $@
+
+${ODIR}/%.o: boot/%.asm
+	nasm $< -f elf -o $@
+
+%.bin: %.asm
+	nasm $< -f bin -o $@
 
 clean:
-	rm *.bin *.o *.dis
+	rm -rf *.bin *.dis ${ODIR}/*.o os-image.bin *.elf

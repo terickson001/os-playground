@@ -16,12 +16,12 @@ start:
     call switch32
     jmp $                       ; This should never be executed
 
-    %include "print.asm"
-    %include "print_hex.asm"
-    %include "boot_disk.asm"
-    %include "switch32.asm"
-    %include "print32.asm"
-    %include "gdt.asm"
+    %include "boot/print.asm"
+    %include "boot/print_hex.asm"
+    %include "boot/boot_disk.asm"
+    %include "boot/switch32.asm"
+    %include "boot/print32.asm"
+    %include "boot/gdt.asm"
 
     [bits 16]
 load_kernel:
@@ -30,7 +30,7 @@ load_kernel:
     call print_nl
 
     mov bx, KERNEL_OFFSET
-    mov dh, 2
+    mov dh, 31                  ; Loading 31 sectors (15.5Kib)
     mov dl, [BOOT_DRIVE]
     call disk_load
     ret
