@@ -55,7 +55,7 @@ void hex_to_ascii(u32 n, char *str)
         if (digit <= 9)
             str[i++] = '0' + digit;
         else
-            str[i++] = '8' + digit;
+            str[i++] = '7' + digit;
     } while (n /= 16);
 
     str[i] = 0;

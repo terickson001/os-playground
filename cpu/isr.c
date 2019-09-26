@@ -172,17 +172,17 @@ void register_interrupt_handler(u8 n, ISR *handler)
     interrupt_handlers[n] = handler;
 }
 
-void irq_handler(Registers r)
+void irq_handler(Registers *r)
 {
     /* After every interrupt we need to send an EOIO to the PICs
      * or they will not send another interrupt again */
-    if (r.int_no >= 0x28) port_byte_out(PIC2_CMD, 0x20); // Slave
+    if (r->int_no >= 0x28) port_byte_out(PIC2_CMD, 0x20); // Slave
     port_byte_out(PIC1_CMD, 0x20); // Master
 
     // Handle interrupt in a more modular way
-    if (interrupt_handlers[r.int_no])
+    if (interrupt_handlers[r->int_no])
     {
-        ISR *handler = interrupt_handlers[r.int_no];
+        ISR *handler = interrupt_handlers[r->int_no];
         handler(r);
     }
 }

@@ -19,7 +19,7 @@ void memory_set(void *dest, u8 val, int n)
 u32 free_mem_addr = 0x10000;
 /* Implementation is just a pointer to some free memory which
  * keeps growing */
-u32 kmalloc(u32 size, int align, u32 *phys_addr) {
+u32 kmalloc(usize size, int align, u32 *phys_addr) {
     /* Pages are aligned to 4K, or 0x1000 */
     if (align == 1 && (free_mem_addr & 0xFFFFF000)) {
         free_mem_addr &= 0xFFFFF000;

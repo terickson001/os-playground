@@ -74,12 +74,12 @@ extern void irq15();
 /* Struct which aggregates many registers */
 typedef struct Registers {
    u32 ds; /* Data segment selector */
-   u32 edi, esi, ebp, esp, ebx, edx, ecx, eax; /* Pushed by pusha. */
+   u32 edi, esi, ebp, useless, ebx, edx, ecx, eax; /* Pushed by pusha. */
    u32 int_no, err_code; /* Interrupt number and error code (if applicable) */
-   u32 eip, cs, eflags, useresp, ss; /* Pushed by the processor automatically */
+   u32 eip, cs, eflags, esp, ss; /* Pushed by the processor automatically */
 } Registers;
 
-typedef void (ISR)(Registers);
+typedef void (ISR)(Registers *);
 void isr_install();
 void register_interrupt_handler(u8 n, ISR *handler);
 

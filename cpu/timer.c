@@ -8,7 +8,7 @@
 
 u32 tick = 0;
 
-static void timer_callback(Registers regs)
+static void timer_callback(Registers *regs)
 {
     UNUSED(regs);
     tick++;

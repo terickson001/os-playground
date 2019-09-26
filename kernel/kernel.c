@@ -10,7 +10,7 @@
 
 #include "kernel.h"
 
-void main()
+void kernel_main()
 {
     isr_install();
     iqr_install();
