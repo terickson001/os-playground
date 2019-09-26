@@ -36,7 +36,7 @@ typedef enum MOD_KEY
     MOD_RALT,
 } MOD_KEY;
 
-enum Scancode {
+enum Scancode_Set_1 {
     SC_ESCAPE = 0x01,
     SC_1 = 0x02,
     SC_2 = 0x03,
@@ -88,7 +88,7 @@ enum Scancode {
     SC_N = 0x31,
     SC_M = 0x32,
     SC_COMMA = 0x33,
-    SC_PREIOD = 0x34,
+    SC_PERIOD = 0x34,
     SC_SLASH = 0x35,
     SC_SHIFTRIGHT = 0x36,
     SC_NUMPAD_MULTIPLY = 0x37,
@@ -183,11 +183,6 @@ enum Scancode {
     */
 };
 
-typedef enum Keycode
-{
-    
-} Keycode;
-
 const char *sc_name[] = {
     "ERROR", "Esc", "1", "2", "3", "4", "5", "6", 
     "7", "8", "9", "0", "-", "=", "Backspace", "Tab", "Q", "W", "E", 
@@ -205,23 +200,267 @@ const char sc_ascii[] = {
     'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '
 };
 
+// Keyode:
+//   3-5 row-column?
+
+#define REG_KEY_DAT 0x60
+#define REG_KEY_STS 0x64
+#define REG_KEY_CMD 0x64
+
 static void keyboard_callback(Registers *regs)
 {
     UNUSED(regs);
     
-    u32 scancode = port_byte_in(0x60);
-    if (scancode >= 0xE0)
+    u8 keycode;
+    
+    u64 scancode = port_byte_in(REG_KEY_DAT);
+    while (port_byte_in(REG_KEY_STS) & 0x1) // Check output buffer status
     {
         scancode <<= 8;
         scancode += port_byte_in(0x60);
-        char scancode_str[5];
-        hex_to_ascii(scancode, scancode_str);
-        kprint("FOUND SUBCODE 0x");
-        kprint(scancode_str);
-        kprint("\n");
+    }
+    if (scancode > 0xff)
+    {
+        char sc_hex[16];
+        hex_to_ascii(scancode, sc_hex);
+        kprint("0x");
+        kprint(sc_hex);
+    }
+
+    u8 released = 0;
+    released = (scancode >> 7) & 0x1;
+    if (released)
+    {
+        scancode -= 0x1 << 7;
+        if (scancode > 0xFF && scancode <= 0xFFFF)
+            scancode -= 0x1 << (7+16);
     }
     
-    if (scancode > SC_MAX) return; // Scancode not implemented
+    switch (scancode)
+    {
+    case SC_ESCAPE:
+        keycode = 0;
+        goto row1;
+    case SC_F1:
+    case SC_F2:
+    case SC_F3:
+    case SC_F4:
+    case SC_F5:
+    case SC_F6:
+    case SC_F8:
+    case SC_F9:
+    case SC_F10:
+        keycode = 1 + scancode-SC_F1;
+        goto row1;
+    case SC_F11:
+        keycode = 11;
+        goto row1;
+    case SC_F12:
+        keycode = 12;
+        goto row1;
+    case SC_PRINTSCREEN:
+        keycode = 15;
+        goto row1;
+    case SC_SCROLLLOCK:
+        keycode = 16;
+        goto row1;
+    case SC_PAUSE:
+        keycode = 17;
+        goto row1;
+        
+    case SC_GRAVE:
+        keycode = 0;
+        goto row2;
+    case SC_1:
+    case SC_2:
+    case SC_3:
+    case SC_4:
+    case SC_5:
+    case SC_6:
+    case SC_7:
+    case SC_8:
+    case SC_9:
+        keycode = 1 + scancode-SC_1;
+        goto row2;
+    case SC_0:
+    case SC_MINUS:
+    case SC_EQUALS:
+    case SC_BACKSPACE:
+        keycode = 10 + scancode-SC_0;
+        goto row2;
+    case SC_INSERT:
+        keycode = 15;
+        goto row2;
+    case SC_HOME:
+        keycode = 16;
+        goto row2;
+    case SC_PAGEUP:
+        keycode = 17;
+        goto row2;
+    case SC_NUMLOCK:
+        keycode = 18;
+        goto row2;
+    case SC_NUMPAD_DIVIDE:
+        keycode = 19;
+        goto row2;
+    case SC_NUMPAD_MULTIPLY:
+        keycode = 20;
+        goto row2;
+    case SC_NUMPAD_MINUS:
+        keycode = 21;
+        goto row2;
+        
+    case SC_TAB:
+    case SC_Q:
+    case SC_W:
+    case SC_E:
+    case SC_R:
+    case SC_T:
+    case SC_Y:
+    case SC_U:
+    case SC_I:
+    case SC_O:
+    case SC_P:
+    case SC_BRACKETLEFT:
+    case SC_BRACKETRIGHT:
+    case SC_ENTER:
+        keycode = scancode-SC_TAB;
+        goto row3;
+    case SC_DELETE:
+        keycode = 15;
+        goto row3;
+    case SC_END:
+        keycode = 16;
+        goto row3;
+    case SC_PAGEDOWN:
+        keycode = 17;
+        goto row3;
+    case SC_NUMPAD_7:
+    case SC_NUMPAD_8:
+    case SC_NUMPAD_9:
+        keycode = 18 + scancode-SC_NUMPAD_7;
+        goto row3;
+    case SC_NUMPAD_PLUS:
+        keycode = 21;
+        goto row3;
+        
+    case SC_CAPSLOCK:
+        keycode = 0;
+        goto row4;
+    case SC_A:
+    case SC_S:
+    case SC_D:
+    case SC_F:
+    case SC_G:
+    case SC_H:
+    case SC_J:
+    case SC_K:
+    case SC_L:
+    case SC_SEMICOLON:
+    case SC_APOSTROPHE:
+        keycode = 1 + scancode-SC_A;
+        goto row4;
+    case SC_NUMPAD_4:
+    case SC_NUMPAD_5:
+    case SC_NUMPAD_6:
+        keycode = 18 + scancode-SC_NUMPAD_4;
+        goto row4;
+
+    case SC_SHIFTLEFT:
+    case SC_BACKSLASH:
+    case SC_Z:
+    case SC_X:
+    case SC_C:
+    case SC_V:
+    case SC_B:
+    case SC_N:
+    case SC_M:
+    case SC_COMMA:
+    case SC_PERIOD:
+    case SC_SLASH:
+    case SC_SHIFTRIGHT:
+        keycode = scancode-SC_SHIFTLEFT;
+        goto row5;
+    case SC_ARROWUP:
+        keycode = 16;
+        goto row5;
+    case SC_NUMPAD_1:
+    case SC_NUMPAD_2:
+    case SC_NUMPAD_3:
+        keycode = 18 + scancode-SC_NUMPAD_1;
+        goto row5;
+    case SC_NUMPAD_ENTER:
+        keycode = 21;
+        goto row5;
+
+    case SC_CONTROLLEFT:
+        keycode = 0;
+        goto row6;
+    case SC_METALEFT:
+        keycode = 1;
+        goto row6;
+    case SC_ALTLEFT:
+        keycode = 2;
+        goto row6;
+    case SC_SPACE:
+        keycode = 3;
+        goto row6;
+    case SC_ALTRIGHT:
+        keycode = 4;
+        goto row6;
+    case SC_METARIGHT:
+        keycode = 5;
+        goto row6;
+    case SC_APPLICATION:
+        keycode = 6;
+        goto row6;
+    case SC_CONTROLRIGHT:
+        keycode = 7;
+        goto row6;
+    case SC_ARROWLEFT:
+        keycode = 15;
+        goto row6;
+    case SC_ARROWDOWN:
+        keycode = 16;
+        goto row6;
+    case SC_ARROWRIGHT:
+        keycode = 17;
+        goto row6;
+    case SC_NUMPAD_0:
+        keycode = 18;
+        goto row6;
+    case SC_NUMPAD_PERIOD:
+        keycode = 20;
+        goto row6;
+    default: {
+        char sc_hex[16];
+        hex_to_ascii(scancode, sc_hex);
+        kprint("ERROR: UNRECOGNIZED SCANCODE (0x");
+        kprint(sc_hex);
+        kprint(")\n");
+    }
+    }
+
+ row1:
+    keycode += 1<<5;
+    goto keycode_finished;
+ row2:
+    keycode += 2<<5;
+    goto keycode_finished;
+ row3:
+    keycode += 3<<5;
+    goto keycode_finished;
+ row4:
+    keycode += 4<<5;
+    goto keycode_finished;
+ row5:
+    keycode += 5<<5;
+    goto keycode_finished;
+ row6:
+    keycode += 6<<5;
+ keycode_finished:
+
+    if (released) return;
     if (scancode == BACKSPACE)
     {
         kprint_backspace();
