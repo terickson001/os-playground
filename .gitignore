@@ -13,6 +13,9 @@
 !boot
 !boot/*
 boot/boot.bin
+
+!cpu
+!cpu/*
     
 !drivers
 !drivers/*
