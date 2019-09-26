@@ -83,4 +83,6 @@ typedef void (ISR)(Registers);
 void isr_install();
 void register_interrupt_handler(u8 n, ISR *handler);
 
+void iqr_install();
+
 #endif

@@ -3,7 +3,8 @@
 
 #include "../cpu/types.h"
 
-void memory_copy(u8 *dest, u8 *src, int n);
-void memory_set(u8 *dest, u8 val, int n);
+void memory_copy(void *dest, void *src, int n);
+void memory_set(void *dest, u8 val, int n);
+u32 kmalloc(u32 size, int align, u32 *phys_addr);
 
 #endif

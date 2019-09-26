@@ -1,10 +1,12 @@
 #include "isr.h"
 #include "idt.h"
+#include "port.h"
+#include "timer.h"
 
-#include "../drivers/port.h"
 #include "../drivers/screen.h"
+#include "../drivers/keyboard.h"
 
-#include "../kernel/util.h"
+#include "../libc/string.h"
 
 #define PIC1     0x20     // Base address of the master PIC
 #define PIC1_CMD PIC1
@@ -185,7 +187,7 @@ void irq_handler(Registers r)
     }
 }
 
-void irq_install()
+void iqr_install()
 {
     // Enable interrupts
     asm volatile("sti");
