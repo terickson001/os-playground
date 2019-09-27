@@ -3,7 +3,6 @@
 
 #include "../cpu/port.h"
 #include "../cpu/isr.h"
-#include "../cpu/types.h"
 
 #include "../libc/string.h"
 #include "../libc/mem.h"
@@ -11,30 +10,8 @@
 
 #include "../kernel/kernel.h"
 
-#define SC_MAX 57
-
-#define ENTER     0x1C
-#define BACKSPACE 0x0E
-
-#define LCTRL     0x1D
-#define RCTRL     0xE01D
-#define LSHIFT    0x2A
-#define RSHIFT    0x36
-#define LALT      0x38
-#define RALT      0xE038
-
-
-static char key_buffer[256];
-static char key_mods[6];
-typedef enum MOD_KEY
-{
-    MOD_LSHIFT,
-    MOD_RSHIFT,
-    MOD_LCTRL,
-    MOD_RCTRL,
-    MOD_LALT,
-    MOD_RALT,
-} MOD_KEY;
+static Keyboard_State STATE = {0};
+static Keyboard_Hook *key_hooks[256];
 
 enum Scancode_Set_1 {
     SC_ESCAPE = 0x01,
@@ -120,7 +97,6 @@ enum Scancode_Set_1 {
     SC_NUMPAD_3 = 0x51,
     SC_NUMPAD_0 = 0x52,
     SC_NUMPAD_PERIOD = 0x53,
-    SC_ALT_PRINTSCREEN = 0x54, /* ALT + PRINT SCREEN. MAPVIRTUALKEYEX( VK_SNAPSHOT, MAPVK_VK_TO_VSC_EX, 0 ) RETURNS SCANCODE 0x54. */
     SC_BRACKETANGLE = 0x56, /* KEY BETWEEN THE LEFT SHIFT AND Z. */
     SC_F11 = 0x57,
     SC_F12 = 0x58,
@@ -172,36 +148,45 @@ enum Scancode_Set_1 {
     SC_LAUNCH_MEDIA = 0xE06D,
 
     SC_PAUSE = 0xE11D45,
-    /*
-    SC_PAUSE:
-    - MAKE: 0xE11D 45 0xE19D C5
-    - MAKE IN RAW INPUT: 0xE11D 0x45
-    - BREAK: NONE
-    - NO REPEAT WHEN YOU HOLD THE KEY DOWN
-    - THERE ARE NO BREAK SO I DON'T KNOW HOW THE KEY DOWN/UP IS EXPECTED TO WORK. RAW INPUT SENDS "KEYDOWN" AND "KEYUP" MESSAGES, AND IT APPEARS THAT THE KEYUP MESSAGE IS SENT DIRECTLY AFTER THE KEYDOWN MESSAGE (YOU CAN'T HOLD THE KEY DOWN) SO DEPENDING ON WHEN GETMESSAGE OR PEEKMESSAGE WILL RETURN MESSAGES, YOU MAY GET BOTH A KEYDOWN AND KEYUP MESSAGE "AT THE SAME TIME". IF YOU USE VK MESSAGES MOST OF THE TIME YOU ONLY GET KEYDOWN MESSAGES, BUT SOME TIMES YOU GET KEYUP MESSAGES TOO.
-    - WHEN PRESSED AT THE SAME TIME AS ONE OR BOTH CONTROL KEYS, GENERATES A 0xE046 (SC_CANCEL) AND THE STRING FOR THAT SCANCODE IS "BREAK".
-    */
 };
 
-const char *sc_name[] = {
-    "ERROR", "Esc", "1", "2", "3", "4", "5", "6", 
-    "7", "8", "9", "0", "-", "=", "Backspace", "Tab", "Q", "W", "E", 
-    "R", "T", "Y", "U", "I", "O", "P", "[", "]", "Enter", "Lctrl", 
-    "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'", "`", 
-    "LShift", "\\", "Z", "X", "C", "V", "B", "N", "M", ",", ".", 
-    "/", "RShift", "Keypad *", "LAlt", "Spacebar"
+const char sc_ascii[128] = {
+    0, 27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+    '-', '=', '\b', '\t',
+    'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']',
+    '\n', 0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'',
+    '`', 0, '\\',
+    'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0,
+    '*', 0, ' ', 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // FUNCTION KEYS
+    '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.', // NUMPAD
+    0, 0 // F11, F12
 };
 
-const char sc_ascii[] = {
-    '?', '?', '1', '2', '3', '4', '5', '6',     
-    '7', '8', '9', '0', '-', '=', '?', '?', 'q', 'w', 'e', 'r', 't', 'y', 
-    'u', 'i', 'o', 'p', '[', ']', '?', '?', 'a', 's', 'd', 'f', 'g', 
-    'h', 'j', 'k', 'l', ';', '\'', '`', '?', '\\', 'z', 'x', 'c', 'v', 
-    'b', 'n', 'm', ',', '.', '/', '?', '?', '?', ' '
-};
+void send_key_event(u8 keycode, u8 released, char ascii)
+{
+    Kbd_Event event;
+    event.state = STATE;
+    event.released = released;
+    event.keycode = keycode;
+    event.ascii = ascii;
 
-// Keyode:
-//   3-5 row-column?
+    for (int i = 0; i < 256; i++)
+        if (key_hooks[i]) (*key_hooks[i])(event);
+}
+
+const char sc_ascii_shifted[128] = {
+    0, 27, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
+    '_', '+', '\b', '\t',
+    'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}',
+    '\n', 0, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"',
+    '~', 0, '|',
+    'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0,
+    '*', 0, ' ', 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // FUNCTION KEYS
+    '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3', '0', '.', // NUMPAD
+    0, 0 // F11, F12
+};
 
 #define REG_KEY_DAT 0x60
 #define REG_KEY_STS 0x64
@@ -214,28 +199,37 @@ static void keyboard_callback(Registers *regs)
     u8 keycode;
     
     u64 scancode = port_byte_in(REG_KEY_DAT);
-    while (port_byte_in(REG_KEY_STS) & 0x1) // Check output buffer status
+    if (scancode == 0xE0)
     {
         scancode <<= 8;
-        scancode += port_byte_in(0x60);
+        scancode += port_byte_in(REG_KEY_DAT);
+        if (scancode == 0xE02A || scancode == 0xE0B7) // PrtScr special case
+        {
+            scancode <<= 16;
+            scancode += port_byte_in(REG_KEY_DAT) << 8;
+            scancode += port_byte_in(REG_KEY_DAT);
+        }
     }
-    if (scancode > 0xff)
+    else if (scancode == 0xE1) // Pause special case
     {
-        char sc_hex[16];
-        hex_to_ascii(scancode, sc_hex);
-        kprint("0x");
-        kprint(sc_hex);
+        scancode <<= 40;
+        scancode += (u64)(port_byte_in(REG_KEY_DAT)) << 32;
+        scancode += port_byte_in(REG_KEY_DAT) << 24;
+        scancode += port_byte_in(REG_KEY_DAT) << 16;
+        scancode += port_byte_in(REG_KEY_DAT) << 8;
+        scancode += port_byte_in(REG_KEY_DAT);
     }
 
     u8 released = 0;
-    released = (scancode >> 7) & 0x1;
+    released = (scancode >> 7) & 1;
     if (released)
     {
-        scancode -= 0x1 << 7;
-        if (scancode > 0xFF && scancode <= 0xFFFF)
-            scancode -= 0x1 << (7+16);
+        scancode -= 0x80;
+        if (scancode > 0xFFFF && scancode <= 0xFFFFFFFF)
+            scancode -= 0x800000;
     }
-    
+
+    keycode = 0;
     switch (scancode)
     {
     case SC_ESCAPE:
@@ -438,51 +432,66 @@ static void keyboard_callback(Registers *regs)
         kprint("ERROR: UNRECOGNIZED SCANCODE (0x");
         kprint(sc_hex);
         kprint(")\n");
+        return;
     }
     }
 
- row1:
-    keycode += 1<<5;
-    goto keycode_finished;
- row2:
-    keycode += 2<<5;
-    goto keycode_finished;
- row3:
-    keycode += 3<<5;
-    goto keycode_finished;
- row4:
-    keycode += 4<<5;
-    goto keycode_finished;
- row5:
-    keycode += 5<<5;
-    goto keycode_finished;
- row6:
-    keycode += 6<<5;
- keycode_finished:
-
-    if (released) return;
-    if (scancode == BACKSPACE)
+ row6: keycode += 1 << 5;
+ row5: keycode += 1 << 5;
+ row4: keycode += 1 << 5;
+ row3: keycode += 1 << 5;
+ row2: keycode += 1 << 5;
+ row1: keycode += 1 << 5;
+    
+    if (scancode == SC_SHIFTLEFT)
     {
-        kprint_backspace();
-        i32 len = strlen(key_buffer);
-        key_buffer[len-1] = 0;
+        STATE.lshift = !released;
     }
-    else if (scancode == ENTER)
+    else if (scancode == SC_SHIFTRIGHT)
     {
-        kprint("\n");
-        user_input(key_buffer);
-        memory_set(key_buffer, 0, sizeof(key_buffer));
+        STATE.rshift = !released;
+    }
+    else if (scancode == SC_CONTROLLEFT)
+    {
+        STATE.lctrl = !released;
+    }
+    else if (scancode == SC_CONTROLRIGHT)
+    {
+        STATE.rctrl = !released;
+    }
+    else if (scancode == SC_ALTLEFT)
+    {
+        STATE.lalt = !released;
+    }
+    else if (scancode == SC_ALTRIGHT)
+    {
+        STATE.ralt = !released;
     }
     else
     {
-        char letter = sc_ascii[scancode];
-        char str[2] = {letter, 0};
-        kprint(str);
-        key_buffer[strlen(key_buffer)] = letter;
+        char ascii;
+        if (STATE.lshift || STATE.rshift)
+            ascii = sc_ascii_shifted[scancode];
+        else
+            ascii = sc_ascii[scancode];
+        send_key_event(keycode, released, ascii);
     }
 }
 
 void init_keyboard()
 {
     register_interrupt_handler(IRQ1, &keyboard_callback);
+}
+
+void register_keyboard_hook(Keyboard_Hook *hook)
+{
+    int i = 0;
+    while (key_hooks[i] != 0) i++;
+    key_hooks[i] = hook;
+}
+
+void unregister_keyboard_hook(Keyboard_Hook *hook)
+{
+    for (u16 i = 0; i < sizeof(key_hooks); i++)
+        if (key_hooks[i] == hook) key_hooks[i] = 0;
 }
