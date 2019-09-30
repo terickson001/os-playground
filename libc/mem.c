@@ -8,27 +8,53 @@ void memory_copy(void *dest, void *src, int n)
 
 void memory_set(void *dest, u8 val, int n)
 {
-    
     for (int i = 0; i < n; i++)
         *((u8 *)dest++) = val;
 }
 
-/* This should be computed at link time, but a hardcoded
- * value is fine for now. Remember that our kernel starts
- * at 0x1000 as defined on the Makefile */
-u32 free_mem_addr = 0x10000;
-/* Implementation is just a pointer to some free memory which
- * keeps growing */
-u32 kmalloc(usize size, int align, u32 *phys_addr) {
-    /* Pages are aligned to 4K, or 0x1000 */
-    if (align == 1 && (free_mem_addr & 0xFFFFF000)) {
-        free_mem_addr &= 0xFFFFF000;
-        free_mem_addr += 0x1000;
-    }
-    /* Save also the physical address */
-    if (phys_addr) *phys_addr = free_mem_addr;
+/* typedef struct Alloc_Header */
+/* { */
+/*     u8 free : 1; */
+/*     u8  */
+/* } Alloc_Header; */
 
-    u32 ret = free_mem_addr;
-    free_mem_addr += size; /* Remember to increment the pointer */
-    return ret;
+/* u32 kmalloc(usize size) */
+/* { */
+    
+/* } */
+
+extern void load_page_directory(u32 *page_directory);
+extern void enable_paging();
+
+u32 page_directory[1024] __attribute__((aligned(4096)));
+void init_paging()
+{
+    // Supervisor:    Only kernel-mode can access
+    // Write Enabled: It can be both read from and written to
+    // Not Present:   The page table is not present
+    for (int i = 0; i < 1024; i++)
+        page_directory[i] = 0x00000002;
+
+    u32 first_page_table[1024] __attribute__((aligned(4096)));
+    for (u32 i; i < 1024; i++)
+        first_page_table [i] = (i * 0x1000) | 3; // attributes: supervisor level, read/write, present
+    page_directory[0] = ((u32)first_page_table) | 3;
+
+
+    load_page_directory(page_directory);
+    enable_paging();
+}
+
+static Page_Frame kalloc_frame_int()
+{
+    u32 i = 0;
+    while (!(page_directory[i] & 0x1))
+    {
+        i++;
+        if (i == npages)
+        {
+            return {Page_Frame}{0};
+        }
+    }
+    
 }

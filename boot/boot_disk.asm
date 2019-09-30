@@ -1,6 +1,6 @@
     ;; INPUTS:
     ;;  dh: Number of sectors to load
-    ;;  dl: drive to laod from
+    ;;  dl: drive to load from
     ;; Outputs:
     ;;  ES:BX: Pointer the the buffer loaded with data
 
@@ -11,10 +11,9 @@ disk_load:
 
     mov ah, 0x02                ; 0x02 = 'read'
     mov al, dh                  ; number of sectors to read [0x01 - 0x80]
+    
     mov cl, 0x02                ; sector [0x01 - 0x11]
-
-    mov ch, 0x00                ; cylinder [0x0 - 0x3FF, upper 2 bits in 'cl'
-
+    mov ch, 0x00                ; cylinder [0x0 - 0x3FF], upper 2 bits in 'cl'
     mov dh, 0x00                ; head number [0x0 - 0xF]
 
     int 13h

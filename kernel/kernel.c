@@ -19,20 +19,20 @@ void term_execute()
         kprint("Stopping the CPU. Bye!\n");
         asm volatile("hlt");
     }
-    else if (strcmp(termbuf, "page") == 0)
-    {
-        u32 phys_addr;
-        u32 page = kmalloc(1000, 1, &phys_addr);
-        char page_str[16] = "";
-        hex_to_ascii(page, page_str);
-        char phys_str[16] = "";
-        hex_to_ascii(phys_addr, phys_str);
-        kprint("Page: ");
-        kprint(page_str);
-        kprint(", physical address: ");
-        kprint(phys_str);
-    }
-    else if (strcmp(termbuf, "CLEAR") == 0)
+    /* else if (strcmp(termbuf, "page") == 0) */
+    /* { */
+    /*     u32 phys_addr; */
+    /*     u32 page = kmalloc(1000, 1, &phys_addr); */
+    /*     char page_str[16] = ""; */
+    /*     hex_to_ascii(page, page_str); */
+    /*     char phys_str[16] = ""; */
+    /*     hex_to_ascii(phys_addr, phys_str); */
+    /*     kprint("Page: "); */
+    /*     kprint(page_str); */
+    /*     kprint(", physical address: "); */
+    /*     kprint(phys_str); */
+    /* } */
+    else if (strcmp(termbuf, "clear") == 0)
     {
         clear_screen();
     }

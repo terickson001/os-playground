@@ -1,6 +1,5 @@
     [org 0x7c00]
     
-    
     KERNEL_OFFSET equ 0x1000
 
 start:
@@ -30,7 +29,7 @@ load_kernel:
     call print_nl
 
     mov bx, KERNEL_OFFSET
-    mov dh, 31                  ; Loading 31 sectors (15.5Kib)
+    mov dh, 32                  ; Loading 32 sectors (16Kib)
     mov dl, [BOOT_DRIVE]
     call disk_load
     ret

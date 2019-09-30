@@ -1,6 +1,8 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
-void user_input(char *input);
+#include "../cpu/types.h"
+
+extern u32 end_kernel;
 
 #endif

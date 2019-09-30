@@ -113,12 +113,8 @@ enum Scancode_Set_1 {
     SC_VOLUME_UP = 0xE030,
     SC_BROWSER_HOME = 0xE032,
     SC_NUMPAD_DIVIDE = 0xE035,
-    SC_PRINTSCREEN = 0xE037,
-    /*
-    SC_PRINTSCREEN:
-    - MAKE: 0xE02A 0xE037
-    - BREAK: 0xE0B7 0xE0AA
-    */
+    SC_PRINTSCREEN = 0xE02AE037,
+    SC_PRINTSCREEN_BREAK = 0xE0B7E0AA,
     SC_ALTRIGHT = 0xE038,
     SC_CANCEL = 0xE046, /* CTRL + PAUSE */
     SC_HOME = 0xE047,
@@ -192,41 +188,94 @@ const char sc_ascii_shifted[128] = {
 #define REG_KEY_STS 0x64
 #define REG_KEY_CMD 0x64
 
+typedef enum Scancode_State
+{
+    SCANCODE_START = 0,
+    SCANCODE_E0,
+    SCANCODE_PAUSE_1,
+    SCANCODE_PAUSE_2,
+    SCANCODE_PAUSE_3,
+    SCANCODE_PAUSE_4,
+    SCANCODE_PRTSCR_1,
+    SCANCODE_PRTSCR_2,
+} Scancode_State;
+
+static Scancode_State scancode_state = SCANCODE_START;
+static u64 scancode = 0;
 static void keyboard_callback(Registers *regs)
 {
     UNUSED(regs);
     
     u8 keycode;
-    
-    u64 scancode = port_byte_in(REG_KEY_DAT);
-    if (scancode == 0xE0)
+
+    scancode += port_byte_in(REG_KEY_DAT);
+    if (scancode_state == SCANCODE_START)
     {
-        scancode <<= 8;
-        scancode += port_byte_in(REG_KEY_DAT);
-        if (scancode == 0xE02A || scancode == 0xE0B7) // PrtScr special case
+        if (scancode == 0xE0)
         {
-            scancode <<= 16;
-            scancode += port_byte_in(REG_KEY_DAT) << 8;
-            scancode += port_byte_in(REG_KEY_DAT);
+            scancode_state = SCANCODE_E0;
+            scancode <<= 8;
+            return;
+        }
+        else if (scancode == 0xE1)
+        {
+            scancode_state = SCANCODE_PAUSE_1;
+            scancode <<= 8;
+            return;
         }
     }
-    else if (scancode == 0xE1) // Pause special case
+    else if (scancode_state == SCANCODE_E0)
     {
-        scancode <<= 40;
-        scancode += (u64)(port_byte_in(REG_KEY_DAT)) << 32;
-        scancode += port_byte_in(REG_KEY_DAT) << 24;
-        scancode += port_byte_in(REG_KEY_DAT) << 16;
-        scancode += port_byte_in(REG_KEY_DAT) << 8;
-        scancode += port_byte_in(REG_KEY_DAT);
+        if (scancode == 0xE02A || scancode == 0xE0B7)
+        {
+            scancode_state = SCANCODE_PRTSCR_1;
+            scancode <<= 8;
+            return;
+        }
     }
+    else if (SCANCODE_PAUSE_1 <= scancode && scancode <= SCANCODE_PAUSE_3)
+    {
+        scancode_state++;
+        scancode <<= 8;
+        return;
+    }
+    else if (scancode_state == SCANCODE_PRTSCR_1)
+    {
+        scancode_state++;
+        scancode <<= 8;
+        return;
+    }
+             
+    /* if (scancode == 0xE0) */
+    /* { */
+    /*     scancode <<= 8; */
+    /*     scancode += port_byte_in(REG_KEY_DAT); */
+    /*     if (scancode == 0xE02A || scancode == 0xE0B7) // PrtScr special case */
+    /*     { */
+    /*         scancode <<= 16; */
+    /*         scancode += port_byte_in(REG_KEY_DAT) << 8; */
+    /*         scancode += port_byte_in(REG_KEY_DAT); */
+    /*     } */
+    /* } */
+    /* else if (scancode == 0xE1) // Pause special case */
+    /* { */
+    /*     scancode <<= 40; */
+    /*     scancode += (u64)(port_byte_in(REG_KEY_DAT)) << 32; */
+    /*     scancode += port_byte_in(REG_KEY_DAT) << 24; */
+    /*     scancode += port_byte_in(REG_KEY_DAT) << 16; */
+    /*     scancode += port_byte_in(REG_KEY_DAT) << 8; */
+    /*     scancode += port_byte_in(REG_KEY_DAT); */
+    /* } */
 
     u8 released = 0;
     released = (scancode >> 7) & 1;
+    
     if (released)
     {
-        scancode -= 0x80;
-        if (scancode > 0xFFFF && scancode <= 0xFFFFFFFF)
-            scancode -= 0x800000;
+        if (scancode == SC_PRINTSCREEN_BREAK)
+            scancode = SC_PRINTSCREEN;
+        else
+            scancode -= 0x80;
     }
 
     keycode = 0;
@@ -476,6 +525,8 @@ static void keyboard_callback(Registers *regs)
             ascii = sc_ascii[scancode];
         send_key_event(keycode, released, ascii);
     }
+    scancode = 0;
+    scancode_state = 0;
 }
 
 void init_keyboard()
