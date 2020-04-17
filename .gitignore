@@ -1,6 +1,7 @@
 *
 
 !.gitignore
+!project.4coder
 
 !Makefile
 !linker.ld
