@@ -2,34 +2,27 @@ ENTRY(_start)
 SECTIONS
 {
 	. = 4K;
- 
-	/* Executable code */
-	.text BLOCK(4K) : ALIGN(4K)
+	.text :
 	{
-        text_start = .;
+		code = .; _code = .; __code = .;
 		*(.text)
+        . = ALIGN(4096);
 	}
- 
-	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
+
+	.data :
 	{
-		*(.rodata)
-	}
- 
-	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
-	{
+		data = .; _data = .; __data = .;
 		*(.data)
-        end_data = .;
+		*(.rodata)
+        . = ALIGN(4096);
 	}
- 
-	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
+
+	.bss :
 	{
-        sbss = .;
-		*(COMMON)
+		bss = .; _bss = .; __bss = .;
 		*(.bss)
-        ebss = .;
-        end_kernel = .;
+        . = ALIGN(4096);
 	}
+
+	end_kernel = .; _end_kernel = .; __end_kernel = .;
 }
