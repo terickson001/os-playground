@@ -19,8 +19,9 @@ typedef i8  b8;
 typedef i16 b16;
 typedef i32 b32;
 typedef i64 b64;
-
 typedef b32 bool;
+
+typedef u8 byte;
 
 #define true 1
 #define false 0

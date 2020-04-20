@@ -28,7 +28,7 @@
 #define ICW4_BUF_MASTER 0x0C   // Buffered mode/master
 #define ICW4_SFNM       0x10   // Soecual full nested (not)
 
-ISR *interrupt_handlers[256];
+ISR *interrupt_handlers[256] = {0};
 
 
 void remap_PIC(int master_offset, int slave_offset)
@@ -52,7 +52,7 @@ void remap_PIC(int master_offset, int slave_offset)
     
     port_byte_out(PIC1_DAT, 0x0);
     port_byte_out(PIC2_DAT, 0x0);
-
+    
     port_byte_out(PIC1_DAT, a1); // Restore masks
     port_byte_out(PIC2_DAT, a2);
 }
@@ -92,10 +92,10 @@ void isr_install() {
     set_idt_gate(29, (u32)isr29);
     set_idt_gate(30, (u32)isr30);
     set_idt_gate(31, (u32)isr31);
-
+    
     // Remap the PIC
     remap_PIC(0x20, 0x28);
-
+    
     // Install IRQs
     set_idt_gate(32, (u32)irq0);
     set_idt_gate(33, (u32)irq1);
@@ -127,7 +127,7 @@ char *exception_messages[] = {
     "Out of Bounds",
     "Invalid Opcode",
     "No Coprocessor",
-
+    
     "Double Fault",
     "Coprocessor Segment Overrun",
     "Bad TSS",
@@ -136,7 +136,7 @@ char *exception_messages[] = {
     "General Protection Fault",
     "Page Fault",
     "Unknown Interrupt",
-
+    
     "Coprocessor Fault",
     "Alignment Check",
     "Machine Check",
@@ -145,7 +145,7 @@ char *exception_messages[] = {
     "Reserved",
     "Reserved",
     "Reserved",
-
+    
     "Reserved",
     "Reserved",
     "Reserved",
@@ -156,15 +156,25 @@ char *exception_messages[] = {
     "Reserved"
 };
 
-void isr_handler(Registers r)
+void isr_handler(Registers *r)
 {
-    kprint("received interrupt: ");
-    char s[3];
-    int_to_ascii(r.int_no, s);
-    kprint(s);
-    kprint("\n");
-    kprint(exception_messages[r.int_no]);
-    kprint("\n");
+    ISR *handler = interrupt_handlers[r->int_no];
+    if (!handler)
+    {
+        kprint("received interrupt: ");
+        
+        char s[3];
+        int_to_ascii(r->int_no, s);
+        kprint(s);
+        kprint("\n  ");
+        
+        kprint(exception_messages[r->int_no]);
+        kprint("\n");
+    }
+    else
+    {
+        handler(r);
+    }
 }
 
 void register_interrupt_handler(u8 n, ISR *handler)
@@ -178,7 +188,7 @@ void irq_handler(Registers *r)
      * or they will not send another interrupt again */
     if (r->int_no >= 0x28) port_byte_out(PIC2_CMD, 0x20); // Slave
     port_byte_out(PIC1_CMD, 0x20); // Master
-
+    
     // Handle interrupt in a more modular way
     if (interrupt_handlers[r->int_no])
     {

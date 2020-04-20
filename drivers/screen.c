@@ -27,7 +27,7 @@ void kprint_at(char *message, int col, int row)
     if (row < 0)
         row = get_offset_row(offset);
     offset = get_offset(col, row);
-
+    
     int i = 0;
     while (message[i])
     {
@@ -35,6 +35,8 @@ void kprint_at(char *message, int col, int row)
         row = get_offset_row(offset);
         col = get_offset_col(offset);
     }
+    char hex[16];
+    hex_to_ascii(i, hex);
 }
 
 void kprint(char *message)
@@ -48,7 +50,7 @@ void kprint_backspace()
     int offset = get_cursor_offset()-2;
     col = get_offset_col(offset);
     row = get_offset_row(offset);
-
+    
     print_char(0x08, col, row, WHITE_ON_BLACK);
 }
 
@@ -57,7 +59,7 @@ void clear_screen()
     int screen_size = MAX_COLS * MAX_ROWS;
     int i;
     char *screen = VIDEO_ADDRESS;
-
+    
     for (i = 0; i < screen_size; i++)
     {
         screen[i*2] = ' ';
@@ -68,19 +70,38 @@ void clear_screen()
 
 // Private Procedures
 
+typedef struct Screen_Char
+{
+    byte symbol;
+    byte color;
+} Screen_Char;
+typedef Screen_Char Screen[MAX_ROWS][MAX_COLS];
+/*
+typedef struct Screen
+{
+    union
+    {
+        Screen_Char chars[MAX_ROWS][MAX_COLS];
+        u8 *vidmem;
+    };
+} Screen;
+*/
+
 int print_char(char c, int col, int row, char attr)
 {
     u8 *vidmem = (u8*) VIDEO_ADDRESS;
+    Screen *screen = (Screen*)vidmem;
+    
     if (!attr) attr = WHITE_ON_BLACK;
-
+    
     /* Error control: print a red 'E' if the coords aren't right */
     if (col >= MAX_COLS || row >= MAX_ROWS)
     {
-        vidmem[2*(MAX_COLS)*(MAX_ROWS)-2] = 'E';
-        vidmem[2*(MAX_COLS)*(MAX_ROWS)-1] = RED_ON_WHITE;
+        (*screen)[MAX_ROWS-1][MAX_COLS-1] = (Screen_Char){'E', RED_ON_WHITE};
+        
         return get_offset(col, row);
     }
-
+    
     int offset = get_cursor_offset();
     if (col < 0)
         col = get_offset_col(offset);
@@ -95,24 +116,30 @@ int print_char(char c, int col, int row, char attr)
     }
     else if (c == 0x08) // BACKSPACE
     {
-        vidmem[offset] = ' ';
-        vidmem[offset+1] = attr;
+        (*screen)[row][col] = (Screen_Char){' ', attr};
+        //vidmem[offset] = ' ';
+        //vidmem[offset+1] = attr;
     }
     else
     {
-        vidmem[offset] = c;
-        vidmem[offset+1] = attr;
+        //vidmem[offset] = c;
+        //vidmem[offset+1] = attr;
+        (*screen)[row][col] = (Screen_Char){c, attr};
         offset+=2;
     }
     if (offset >= MAX_ROWS * MAX_COLS * 2)
     {
-        memory_copy(vidmem, vidmem+(MAX_COLS*2), (MAX_COLS*(MAX_ROWS-1)*2)); // Scroll text
-        u8 *last_line = vidmem + get_offset(0, MAX_ROWS-1);
-        for (int i = 0; i < MAX_COLS*2; i++) last_line[i] = 0;
+        memory_copy(&(*screen)[0][0], &(*screen)[1][0], sizeof(*screen)-sizeof((*screen)[0]));
+        Screen_Char *last_line = &(*screen)[MAX_ROWS-1][0];
+        for (int i = 0; i < MAX_COLS; i++) last_line[i] = (Screen_Char){0};
+        // memory_copy(vidmem, vidmem+(MAX_COLS*2), (MAX_COLS*(MAX_ROWS-1)*2)); // Scroll text
+        //u8 *last_line = vidmem + get_offset(0, MAX_ROWS-1);
+        // for (int i = 0; i < MAX_COLS*2; i++) last_line[i] = 0;
+        
         offset -= 2 * MAX_COLS;
     }
     set_cursor_offset(offset);
-
+    
     return offset;
 }
 
@@ -134,7 +161,7 @@ void set_cursor_offset(int offset)
     port_byte_out(REG_SCR_CTL, 15);
     port_byte_out(REG_SCR_DAT, (u8)(offset & 0xff));
 }
-        
+
 int get_offset(int col, int row) { return 2 * (row * MAX_COLS + col); }
 int get_offset_row(int offset) { return offset / (2 * MAX_COLS); }
 int get_offset_col(int offset) { return (offset - (get_offset_row(offset)*2*MAX_COLS))/2; }

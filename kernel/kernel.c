@@ -68,26 +68,29 @@ void term_input(Kbd_Event e)
     }
 }
 
-
+void div_by_zero(Registers *r)
+{
+    kprint("PANIC: DIVIDE_BY_ZERO\n");
+    while(true){};
+}
 
 void kernel_main()
 {
     isr_install();
-    iqr_install();
+    // iqr_install();
     
     clear_screen();
     
     // register_keyboard_hook(&term_input);
     
-    /*
-        kprint("Type something, it will go through the kernel\n"
-               "Type `exit` to halt the CPU or `page` to request a kmalloc()\n"
-               "> ");
-        */
+    kprint("Type something, it will go through the kernel\n"
+           "Type `exit` to halt the CPU or `page` to request a kmalloc()\n"
+           "> ");
+    // init_paging();
     
-    
-    init_paging();
-    
-    u32 *ptr = (u32*)0xA0000000;
-    u32 do_page_fault = *ptr;
+    // u32 *ptr = (u32*)0xA0000000;
+    // u32 do_page_fault = *ptr;
+    // register_interrupt_handler(0, div_by_zero);
+    // u32 foo = 1/0;
+    // kprint("Did We Fault?\n");
 }

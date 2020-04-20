@@ -1,4 +1,5 @@
 CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
+GDB = /usr/local/i386elfgcc/bin/i386-elf-gdb
 
 ODIR = obj
 
@@ -14,18 +15,19 @@ CFLAGS = -g -m32 -fno-builtin -fno-exceptions -Wall -Wextra
 os-image.bin: boot/boot.bin kernel.bin
 	cat $^ > os-image.bin
 
-kernel.bin: ${ODIR}/kernel_entry.o ${OBJS} 
+kernel.bin: ${ODIR}/kernel_entry.o ${OBJS}
 	i386-elf-ld -o $@ -T linker.ld $^ --oformat binary
 
 kernel.elf: ${ODIR}/kernel_entry.o ${OBJS}
-	i386-elf-ld -o $@ -T linker.ld $^ 
+	i386-elf-ld -o $@ -T linker.ld $^
 
 run: os-image.bin
 	qemu-system-i386 -drive file=os-image.bin,format=raw,if=floppy
 
 debug: os-image.bin kernel.elf
 	qemu-system-i386 -s -S -drive file=os-image.bin,format=raw,if=floppy -d guest_errors,int &
-	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+	sleep 0.2
+	${GDB} -ex "target remote localhost:1234" -ex "add-symbol-file kernel.elf 0x100000"
 
 
 ${ODIR}/%.o: %.c ${DEPS}
