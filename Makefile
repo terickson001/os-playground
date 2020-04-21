@@ -27,7 +27,7 @@ run: os-image.bin
 debug: os-image.bin kernel.elf
 	qemu-system-i386 -s -S -drive file=os-image.bin,format=raw,if=floppy -d guest_errors,int &
 	sleep 0.2
-	${GDB} -ex "target remote localhost:1234" -ex "add-symbol-file kernel.elf 0x100000"
+	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 
 ${ODIR}/%.o: %.c ${DEPS}

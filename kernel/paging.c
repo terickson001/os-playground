@@ -21,7 +21,7 @@ u32 *frames;
 u32 nframes;
 
 extern u32 end_kernel;
-u32 placement_address = (u32)&end_kernel;
+u32 placement_address = (u32)(&end_kernel);
 
 #define INDEX_FROM_BIT(a)  (a/(32))
 #define OFFSET_FROM_BIT(a) (a%(32))

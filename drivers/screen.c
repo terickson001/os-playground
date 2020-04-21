@@ -116,15 +116,15 @@ int print_char(char c, int col, int row, char attr)
     }
     else if (c == 0x08) // BACKSPACE
     {
-        (*screen)[row][col] = (Screen_Char){' ', attr};
-        //vidmem[offset] = ' ';
-        //vidmem[offset+1] = attr;
+        // (*screen)[row][col] = (Screen_Char){' ', attr};
+        vidmem[offset] = ' ';
+        vidmem[offset+1] = attr;
     }
     else
     {
-        //vidmem[offset] = c;
-        //vidmem[offset+1] = attr;
-        (*screen)[row][col] = (Screen_Char){c, attr};
+        vidmem[offset] = c;
+        vidmem[offset+1] = attr;
+        // (*screen)[row][col] = (Screen_Char){c, attr};
         offset+=2;
     }
     if (offset >= MAX_ROWS * MAX_COLS * 2)
