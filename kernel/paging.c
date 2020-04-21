@@ -21,14 +21,14 @@ u32 *frames;
 u32 nframes;
 
 extern u32 end_kernel;
-u32 placement_address = (u32)(&end_kernel);
+u32 placement_address = (u32)&end_kernel;
 
 #define INDEX_FROM_BIT(a)  (a/(32))
 #define OFFSET_FROM_BIT(a) (a%(32))
 
 u32 kmalloc_int(u32 sz, int align, u32 *phys)
 {
-    if (align == 1 && (placement_address & 0xFFF)) // Aligned?
+    if (align == 1 && (placement_address & 0xFFF)) // Not Aligned?
     {
         // Align
         placement_address &= 0xFFFFF000;
@@ -103,6 +103,9 @@ void alloc_frame(Page *page, b32 is_kernel, b32 is_writeable)
     page->rw = !!is_writeable;
     page->user = !is_kernel;
     page->frame = idx;
+    char hex[16];
+    hex_to_ascii(page->raw, hex);
+    kprint("PAGE_ENTRY: 0x"); kprint(hex); kprint("\n");
 }
 
 void free_frame(Page *page)
@@ -133,9 +136,11 @@ Page *get_page(u32 address, b32 make, Page_Directory *dir)
         dir->tables[table_idx] = (Page_Table*)kmalloc_ap(sizeof(Page_Table), &tmp);
         char str[16];
         hex_to_ascii(tmp, str);
-        // kprint("TABLE_ADDRESS: 0x"); kprint(str); kprint("\n");
+        kprint("TABLE_ADDRESS: 0x"); kprint(str); kprint("\n");
         memory_set(dir->tables[table_idx], 0, 0x1000);
         dir->entries[table_idx].raw = tmp | 0x7; // PRESENT, RW, US.
+        hex_to_ascii(dir->entries[table_idx].raw, str);
+        kprint("TABLE_ENTRY: 0x"); kprint(str); kprint("\n");
         return &dir->tables[table_idx]->pages[address%1024];
     }
     else
@@ -146,28 +151,30 @@ Page *get_page(u32 address, b32 make, Page_Directory *dir)
 
 void init_paging()
 {
-    // kprint("1\n");
+    placement_address = (u32)&end_kernel;
+    
     u32 mem_end_page = 0x1000000; // End of memory (Assume 16MiB for now)
+    
     nframes = mem_end_page / 0x1000;
     frames = (u32*)kmalloc(INDEX_FROM_BIT(nframes));
     memory_set(frames, 0, INDEX_FROM_BIT(nframes));
     
     kernel_directory = (Page_Directory *)kmalloc_a(sizeof(Page_Directory));
-    memory_set(kernel_directory, 0, sizeof(Page_Directory));
+    // memory_set(kernel_directory, 0, sizeof(Page_Directory));
+    for (int i =  0; i < 1024; i++)
+        kernel_directory->entries[i].raw = 0x00000002;
     current_directory = kernel_directory;
     
-    // kprint("2\n");
-    int i = 0;
+    u32 i = 0;
     while (i < placement_address)
     {
-        kprint("ALLOCATING\n");
         alloc_frame(get_page(i, 1, kernel_directory), false, false);
         i += 0x1000;
     }
-    // kprint("3\n");
+    
     register_interrupt_handler(14, page_fault);
     load_page_directory((u32*)&current_directory->entries);
-    enable_paging();
+    // enable_paging();
 }
 
 void page_fault(Registers *regs)

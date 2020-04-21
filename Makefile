@@ -10,16 +10,16 @@ DEPS = $(wildcard **/*.h)
 
 OBJS=$(addprefix $(ODIR)/, $(patsubst %.c,%.o,$(patsubst %.asm,%.o,$(notdir $(SRCS)))))
 
-CFLAGS = -g -m32 -fno-builtin -fno-exceptions -Wall -Wextra
+CFLAGS = -g3 -m32 -fno-builtin -fno-exceptions -Wall -Wextra
 
 os-image.bin: boot/boot.bin kernel.bin
 	cat $^ > os-image.bin
 
 kernel.bin: ${ODIR}/kernel_entry.o ${OBJS}
-	i386-elf-ld -o $@ -T linker.ld $^ --oformat binary
+	i386-elf-ld  -T linker.ld -o $@ $^ --oformat binary
 
 kernel.elf: ${ODIR}/kernel_entry.o ${OBJS}
-	i386-elf-ld -o $@ -T linker.ld $^
+	i386-elf-ld -T linker.ld -o $@ $^
 
 run: os-image.bin
 	qemu-system-i386 -drive file=os-image.bin,format=raw,if=floppy
@@ -34,7 +34,7 @@ ${ODIR}/%.o: %.c ${DEPS}
 	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
 
 ${ODIR}/%.o: %.asm
-	nasm $< -f elf -o $@
+	nasm $< -f elf -g -o $@
 
 
 ${ODIR}/kernel_entry.o: boot/kernel_entry.asm
