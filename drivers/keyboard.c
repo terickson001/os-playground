@@ -100,7 +100,7 @@ enum Scancode_Set_1 {
     SC_BRACKETANGLE = 0x56, /* KEY BETWEEN THE LEFT SHIFT AND Z. */
     SC_F11 = 0x57,
     SC_F12 = 0x58,
-
+    
     SC_MEDIA_PREVIOUS = 0xE010,
     SC_MEDIA_NEXT = 0xE019,
     SC_NUMPAD_ENTER = 0xE01C,
@@ -142,7 +142,7 @@ enum Scancode_Set_1 {
     SC_LAUNCH_APP1 = 0xE06B,
     SC_LAUNCH_EMAIL = 0xE06C,
     SC_LAUNCH_MEDIA = 0xE06D,
-
+    
     SC_PAUSE = 0xE11D45,
 };
 
@@ -166,7 +166,7 @@ void send_key_event(u8 keycode, u8 released, char ascii)
     event.released = released;
     event.keycode = keycode;
     event.ascii = ascii;
-
+    
     for (int i = 0; i < 256; i++)
         if (key_hooks[i]) (*key_hooks[i])(event);
 }
@@ -207,7 +207,7 @@ static void keyboard_callback(Registers *regs)
     UNUSED(regs);
     
     u8 keycode;
-
+    
     scancode += port_byte_in(REG_KEY_DAT);
     if (scancode_state == SCANCODE_START)
     {
@@ -245,7 +245,7 @@ static void keyboard_callback(Registers *regs)
         scancode <<= 8;
         return;
     }
-             
+    
     /* if (scancode == 0xE0) */
     /* { */
     /*     scancode <<= 8; */
@@ -266,7 +266,7 @@ static void keyboard_callback(Registers *regs)
     /*     scancode += port_byte_in(REG_KEY_DAT) << 8; */
     /*     scancode += port_byte_in(REG_KEY_DAT); */
     /* } */
-
+    
     u8 released = 0;
     released = (scancode >> 7) & 1;
     
@@ -277,220 +277,220 @@ static void keyboard_callback(Registers *regs)
         else
             scancode -= 0x80;
     }
-
+    
     keycode = 0;
     switch (scancode)
     {
-    case SC_ESCAPE:
+        case SC_ESCAPE:
         keycode = 0;
         goto row1;
-    case SC_F1:
-    case SC_F2:
-    case SC_F3:
-    case SC_F4:
-    case SC_F5:
-    case SC_F6:
-    case SC_F8:
-    case SC_F9:
-    case SC_F10:
+        case SC_F1:
+        case SC_F2:
+        case SC_F3:
+        case SC_F4:
+        case SC_F5:
+        case SC_F6:
+        case SC_F8:
+        case SC_F9:
+        case SC_F10:
         keycode = 1 + scancode-SC_F1;
         goto row1;
-    case SC_F11:
+        case SC_F11:
         keycode = 11;
         goto row1;
-    case SC_F12:
+        case SC_F12:
         keycode = 12;
         goto row1;
-    case SC_PRINTSCREEN:
+        case SC_PRINTSCREEN:
         keycode = 15;
         goto row1;
-    case SC_SCROLLLOCK:
+        case SC_SCROLLLOCK:
         keycode = 16;
         goto row1;
-    case SC_PAUSE:
+        case SC_PAUSE:
         keycode = 17;
         goto row1;
         
-    case SC_GRAVE:
+        case SC_GRAVE:
         keycode = 0;
         goto row2;
-    case SC_1:
-    case SC_2:
-    case SC_3:
-    case SC_4:
-    case SC_5:
-    case SC_6:
-    case SC_7:
-    case SC_8:
-    case SC_9:
+        case SC_1:
+        case SC_2:
+        case SC_3:
+        case SC_4:
+        case SC_5:
+        case SC_6:
+        case SC_7:
+        case SC_8:
+        case SC_9:
         keycode = 1 + scancode-SC_1;
         goto row2;
-    case SC_0:
-    case SC_MINUS:
-    case SC_EQUALS:
-    case SC_BACKSPACE:
+        case SC_0:
+        case SC_MINUS:
+        case SC_EQUALS:
+        case SC_BACKSPACE:
         keycode = 10 + scancode-SC_0;
         goto row2;
-    case SC_INSERT:
+        case SC_INSERT:
         keycode = 15;
         goto row2;
-    case SC_HOME:
+        case SC_HOME:
         keycode = 16;
         goto row2;
-    case SC_PAGEUP:
+        case SC_PAGEUP:
         keycode = 17;
         goto row2;
-    case SC_NUMLOCK:
+        case SC_NUMLOCK:
         keycode = 18;
         goto row2;
-    case SC_NUMPAD_DIVIDE:
+        case SC_NUMPAD_DIVIDE:
         keycode = 19;
         goto row2;
-    case SC_NUMPAD_MULTIPLY:
+        case SC_NUMPAD_MULTIPLY:
         keycode = 20;
         goto row2;
-    case SC_NUMPAD_MINUS:
+        case SC_NUMPAD_MINUS:
         keycode = 21;
         goto row2;
         
-    case SC_TAB:
-    case SC_Q:
-    case SC_W:
-    case SC_E:
-    case SC_R:
-    case SC_T:
-    case SC_Y:
-    case SC_U:
-    case SC_I:
-    case SC_O:
-    case SC_P:
-    case SC_BRACKETLEFT:
-    case SC_BRACKETRIGHT:
-    case SC_ENTER:
+        case SC_TAB:
+        case SC_Q:
+        case SC_W:
+        case SC_E:
+        case SC_R:
+        case SC_T:
+        case SC_Y:
+        case SC_U:
+        case SC_I:
+        case SC_O:
+        case SC_P:
+        case SC_BRACKETLEFT:
+        case SC_BRACKETRIGHT:
+        case SC_ENTER:
         keycode = scancode-SC_TAB;
         goto row3;
-    case SC_DELETE:
+        case SC_DELETE:
         keycode = 15;
         goto row3;
-    case SC_END:
+        case SC_END:
         keycode = 16;
         goto row3;
-    case SC_PAGEDOWN:
+        case SC_PAGEDOWN:
         keycode = 17;
         goto row3;
-    case SC_NUMPAD_7:
-    case SC_NUMPAD_8:
-    case SC_NUMPAD_9:
+        case SC_NUMPAD_7:
+        case SC_NUMPAD_8:
+        case SC_NUMPAD_9:
         keycode = 18 + scancode-SC_NUMPAD_7;
         goto row3;
-    case SC_NUMPAD_PLUS:
+        case SC_NUMPAD_PLUS:
         keycode = 21;
         goto row3;
         
-    case SC_CAPSLOCK:
+        case SC_CAPSLOCK:
         keycode = 0;
         goto row4;
-    case SC_A:
-    case SC_S:
-    case SC_D:
-    case SC_F:
-    case SC_G:
-    case SC_H:
-    case SC_J:
-    case SC_K:
-    case SC_L:
-    case SC_SEMICOLON:
-    case SC_APOSTROPHE:
+        case SC_A:
+        case SC_S:
+        case SC_D:
+        case SC_F:
+        case SC_G:
+        case SC_H:
+        case SC_J:
+        case SC_K:
+        case SC_L:
+        case SC_SEMICOLON:
+        case SC_APOSTROPHE:
         keycode = 1 + scancode-SC_A;
         goto row4;
-    case SC_NUMPAD_4:
-    case SC_NUMPAD_5:
-    case SC_NUMPAD_6:
+        case SC_NUMPAD_4:
+        case SC_NUMPAD_5:
+        case SC_NUMPAD_6:
         keycode = 18 + scancode-SC_NUMPAD_4;
         goto row4;
-
-    case SC_SHIFTLEFT:
-    case SC_BACKSLASH:
-    case SC_Z:
-    case SC_X:
-    case SC_C:
-    case SC_V:
-    case SC_B:
-    case SC_N:
-    case SC_M:
-    case SC_COMMA:
-    case SC_PERIOD:
-    case SC_SLASH:
-    case SC_SHIFTRIGHT:
+        
+        case SC_SHIFTLEFT:
+        case SC_BACKSLASH:
+        case SC_Z:
+        case SC_X:
+        case SC_C:
+        case SC_V:
+        case SC_B:
+        case SC_N:
+        case SC_M:
+        case SC_COMMA:
+        case SC_PERIOD:
+        case SC_SLASH:
+        case SC_SHIFTRIGHT:
         keycode = scancode-SC_SHIFTLEFT;
         goto row5;
-    case SC_ARROWUP:
+        case SC_ARROWUP:
         keycode = 16;
         goto row5;
-    case SC_NUMPAD_1:
-    case SC_NUMPAD_2:
-    case SC_NUMPAD_3:
+        case SC_NUMPAD_1:
+        case SC_NUMPAD_2:
+        case SC_NUMPAD_3:
         keycode = 18 + scancode-SC_NUMPAD_1;
         goto row5;
-    case SC_NUMPAD_ENTER:
+        case SC_NUMPAD_ENTER:
         keycode = 21;
         goto row5;
-
-    case SC_CONTROLLEFT:
+        
+        case SC_CONTROLLEFT:
         keycode = 0;
         goto row6;
-    case SC_METALEFT:
+        case SC_METALEFT:
         keycode = 1;
         goto row6;
-    case SC_ALTLEFT:
+        case SC_ALTLEFT:
         keycode = 2;
         goto row6;
-    case SC_SPACE:
+        case SC_SPACE:
         keycode = 3;
         goto row6;
-    case SC_ALTRIGHT:
+        case SC_ALTRIGHT:
         keycode = 4;
         goto row6;
-    case SC_METARIGHT:
+        case SC_METARIGHT:
         keycode = 5;
         goto row6;
-    case SC_APPLICATION:
+        case SC_APPLICATION:
         keycode = 6;
         goto row6;
-    case SC_CONTROLRIGHT:
+        case SC_CONTROLRIGHT:
         keycode = 7;
         goto row6;
-    case SC_ARROWLEFT:
+        case SC_ARROWLEFT:
         keycode = 15;
         goto row6;
-    case SC_ARROWDOWN:
+        case SC_ARROWDOWN:
         keycode = 16;
         goto row6;
-    case SC_ARROWRIGHT:
+        case SC_ARROWRIGHT:
         keycode = 17;
         goto row6;
-    case SC_NUMPAD_0:
+        case SC_NUMPAD_0:
         keycode = 18;
         goto row6;
-    case SC_NUMPAD_PERIOD:
+        case SC_NUMPAD_PERIOD:
         keycode = 20;
         goto row6;
-    default: {
-        char sc_hex[16];
-        hex_to_ascii(scancode, sc_hex);
-        kprint("ERROR: UNRECOGNIZED SCANCODE (0x");
-        kprint(sc_hex);
-        kprint(")\n");
-        return;
+        default: {
+            char sc_hex[16];
+            hex_to_ascii(scancode, sc_hex);
+            kprint("ERROR: UNRECOGNIZED SCANCODE (0x");
+            kprint(sc_hex);
+            kprint(")\n");
+            return;
+        }
     }
-    }
-
- row6: keycode += 1 << 5;
- row5: keycode += 1 << 5;
- row4: keycode += 1 << 5;
- row3: keycode += 1 << 5;
- row2: keycode += 1 << 5;
- row1: keycode += 1 << 5;
+    
+    row6: keycode += 1 << 5;
+    row5: keycode += 1 << 5;
+    row4: keycode += 1 << 5;
+    row3: keycode += 1 << 5;
+    row2: keycode += 1 << 5;
+    row1: keycode += 1 << 5;
     
     if (scancode == SC_SHIFTLEFT)
     {
@@ -518,11 +518,14 @@ static void keyboard_callback(Registers *regs)
     }
     else
     {
-        char ascii;
-        if (STATE.lshift || STATE.rshift)
-            ascii = sc_ascii_shifted[scancode];
-        else
-            ascii = sc_ascii[scancode];
+        char ascii = 0;
+        if (scancode <= 127)
+        {
+            if (STATE.lshift || STATE.rshift)
+                ascii = sc_ascii_shifted[scancode];
+            else
+                ascii = sc_ascii[scancode];
+        }
         send_key_event(keycode, released, ascii);
     }
     scancode = 0;

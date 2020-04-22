@@ -32,7 +32,7 @@ typedef struct Kbd_Event
     char ascii;
 } Kbd_Event;
 
-typedef void (Keyboard_Hook)(Kbd_Event event);
+typedef void Keyboard_Hook(Kbd_Event event);
 
 void init_keyboard();
 void register_keyboard_hook(Keyboard_Hook *hook);

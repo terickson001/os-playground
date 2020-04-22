@@ -76,16 +76,6 @@ typedef struct Screen_Char
     byte color;
 } Screen_Char;
 typedef Screen_Char Screen[MAX_ROWS][MAX_COLS];
-/*
-typedef struct Screen
-{
-    union
-    {
-        Screen_Char chars[MAX_ROWS][MAX_COLS];
-        u8 *vidmem;
-    };
-} Screen;
-*/
 
 int print_char(char c, int col, int row, char attr)
 {
@@ -116,15 +106,11 @@ int print_char(char c, int col, int row, char attr)
     }
     else if (c == 0x08) // BACKSPACE
     {
-        // (*screen)[row][col] = (Screen_Char){' ', attr};
-        vidmem[offset] = ' ';
-        vidmem[offset+1] = attr;
+        (*screen)[row][col] = (Screen_Char){' ', attr};
     }
     else
     {
-        vidmem[offset] = c;
-        vidmem[offset+1] = attr;
-        // (*screen)[row][col] = (Screen_Char){c, attr};
+        (*screen)[row][col] = (Screen_Char){c, attr};
         offset+=2;
     }
     if (offset >= MAX_ROWS * MAX_COLS * 2)
@@ -132,9 +118,6 @@ int print_char(char c, int col, int row, char attr)
         memory_copy(&(*screen)[0][0], &(*screen)[1][0], sizeof(*screen)-sizeof((*screen)[0]));
         Screen_Char *last_line = &(*screen)[MAX_ROWS-1][0];
         for (int i = 0; i < MAX_COLS; i++) last_line[i] = (Screen_Char){0};
-        // memory_copy(vidmem, vidmem+(MAX_COLS*2), (MAX_COLS*(MAX_ROWS-1)*2)); // Scroll text
-        //u8 *last_line = vidmem + get_offset(0, MAX_ROWS-1);
-        // for (int i = 0; i < MAX_COLS*2; i++) last_line[i] = 0;
         
         offset -= 2 * MAX_COLS;
     }

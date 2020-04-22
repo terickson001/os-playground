@@ -4,7 +4,8 @@
 #include "../libc/string.h"
 #include "../drivers/screen.h"
 
-#define STRING(x) #x
+#define STRING_(x) #x
+#define STRING(x) STRING_(x)
 #define PANIC(msg) \
 do {   \
 kprint("PANIC("); \
@@ -95,17 +96,12 @@ void alloc_frame(Page *page, b32 is_kernel, b32 is_writeable)
     
     u32 idx = first_free_frame();
     if (idx == (u32)-1)
-    {
-        PANIC("NO FREE PAGES"); // PANIC
-    }
+        PANIC("NO FREE PAGES");
     set_frame_used(idx*0x1000);
     page->present = true;
     page->rw = !!is_writeable;
     page->user = !is_kernel;
     page->frame = idx;
-    char hex[16];
-    hex_to_ascii(page->raw, hex);
-    kprint("PAGE_ENTRY: 0x"); kprint(hex); kprint("\n");
 }
 
 void free_frame(Page *page)
@@ -134,13 +130,8 @@ Page *get_page(u32 address, b32 make, Page_Directory *dir)
     {
         u32 tmp;
         dir->tables[table_idx] = (Page_Table*)kmalloc_ap(sizeof(Page_Table), &tmp);
-        char str[16];
-        hex_to_ascii(tmp, str);
-        kprint("TABLE_ADDRESS: 0x"); kprint(str); kprint("\n");
         memory_set(dir->tables[table_idx], 0, 0x1000);
-        dir->entries[table_idx].raw = tmp | 0x7; // PRESENT, RW, US.
-        hex_to_ascii(dir->entries[table_idx].raw, str);
-        kprint("TABLE_ENTRY: 0x"); kprint(str); kprint("\n");
+        dir->entries[table_idx].raw = tmp | 0x3; // PRESENT, RW, US.
         return &dir->tables[table_idx]->pages[address%1024];
     }
     else
@@ -160,7 +151,8 @@ void init_paging()
     memory_set(frames, 0, INDEX_FROM_BIT(nframes));
     
     kernel_directory = (Page_Directory *)kmalloc_a(sizeof(Page_Directory));
-    // memory_set(kernel_directory, 0, sizeof(Page_Directory));
+    memory_set(kernel_directory, 0, sizeof(Page_Directory));
+    // RW, not present, not user
     for (int i =  0; i < 1024; i++)
         kernel_directory->entries[i].raw = 0x00000002;
     current_directory = kernel_directory;
@@ -168,13 +160,13 @@ void init_paging()
     u32 i = 0;
     while (i < placement_address)
     {
-        alloc_frame(get_page(i, 1, kernel_directory), false, false);
+        alloc_frame(get_page(i, true, kernel_directory), false, false);
         i += 0x1000;
     }
     
     register_interrupt_handler(14, page_fault);
-    load_page_directory((u32*)&current_directory->entries);
-    // enable_paging();
+    load_page_directory((u32*)&kernel_directory->entries);
+    enable_paging();
 }
 
 void page_fault(Registers *regs)

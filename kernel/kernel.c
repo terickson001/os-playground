@@ -68,12 +68,6 @@ void term_input(Kbd_Event e)
     }
 }
 
-void div_by_zero(Registers *r)
-{
-    kprint("PANIC: DIVIDE_BY_ZERO\n");
-    while(true){};
-}
-
 void kernel_main()
 {
     isr_install();
@@ -88,16 +82,5 @@ void kernel_main()
            "> ");
     init_paging();
     
-    /*
-        u32 *ptr = (u32*)0xA0000000;
-        u32 do_page_fault = *ptr;
-        char hex[16];
-        hex_to_ascii(do_page_fault, hex);
-        kprint("DO_PAGE_FAULT: 0x"); kprint(hex); kprint("\n");
-    */
-    /*
-        register_interrupt_handler(0, div_by_zero);
-        u32 foo = 1/0;
-    */
     kprint("Did We Fault?\n");
 }
