@@ -3,6 +3,7 @@
 #include "../libc/mem.h"
 #include "../libc/string.h"
 #include "../drivers/screen.h"
+#include "kheap.h"
 
 #define STRING_(x) #x
 #define STRING(x) STRING_(x)
@@ -16,6 +17,8 @@ kprint("\n"); \
 while(true){}; \
 } while (false);
 
+extern Heap *kheap;
+
 Page_Directory *kernel_directory = 0;
 Page_Directory *current_directory = 0;
 u32 *frames;
@@ -27,8 +30,10 @@ u32 placement_address = (u32)&end_kernel;
 #define INDEX_FROM_BIT(a)  (a/(32))
 #define OFFSET_FROM_BIT(a) (a%(32))
 
-u32 kmalloc_int(u32 sz, int align, u32 *phys)
+u32 kmalloc_int(u32 sz, b32 align, u32 *phys)
 {
+    if (kheap) return (u32)alloc(sz, align, kheap);
+    
     if (align == 1 && (placement_address & 0xFFF)) // Not Aligned?
     {
         // Align
@@ -46,6 +51,10 @@ u32 kmalloc_p(u32 sz, u32 *phys)  { return kmalloc_int(sz, false, phys); }
 u32 kmalloc_ap(u32 sz, u32 *phys) { return kmalloc_int(sz, true, phys);  }
 u32 kmalloc(u32 sz)               { return kmalloc_int(sz, false, 0);    }
 
+void kfree(void *p)
+{
+    if (kheap) free(p, kheap);
+}
 // Bit Set
 static void set_frame_used(u32 frame_addr)
 {
@@ -156,17 +165,38 @@ void init_paging()
     for (int i =  0; i < 1024; i++)
         kernel_directory->entries[i].raw = 0x00000002;
     current_directory = kernel_directory;
+    u32 i;
     
-    u32 i = 0;
-    while (i < placement_address)
+    // Create the page tables for the kheap
+    i = 0;
+    while (i < KHEAP_INITIAL_SIZE)
+    {
+        get_page(KHEAP_START + i, 1, kernel_directory);
+        i += 0x1000;
+    }
+    
+    // Identity map the kernel
+    i = 0;
+    while (i < placement_address+0x1000)
     {
         alloc_frame(get_page(i, true, kernel_directory), false, false);
         i += 0x1000;
     }
     
+    // Allocate frames for the kheap
+    i = 0;
+    while (i < KHEAP_INITIAL_SIZE)
+    {
+        alloc_frame(get_page(KHEAP_START + i, 1, kernel_directory), false, false);
+        i += 0x1000;
+    }
+    
+    
     register_interrupt_handler(14, page_fault);
     load_page_directory((u32*)&kernel_directory->entries);
     enable_paging();
+    
+    kheap = make_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, 0xCFFFF000, false, false);
 }
 
 void page_fault(Registers *regs)

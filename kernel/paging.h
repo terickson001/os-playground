@@ -3,8 +3,8 @@
 
 #include "../cpu/types.h"
 #include "../cpu/isr.h"
-// Paging Types
 
+// Paging Types
 typedef u32 Page_Frame;
 typedef union Page_Table_Entry
 {
@@ -61,8 +61,14 @@ u32 kmalloc_p(u32 sz, u32 *phys);
 u32 kmalloc_ap(u32 sz, u32 *phys);
 u32 kmalloc(u32 sz);
 
+void kfree(void *p);
+
 void init_paging();
 Page *get_page(u32 address, b32 make, Page_Directory *dir);
+void alloc_frame(Page *page, b32 is_kernel, b32 is_writeable);
+void free_frame(Page *page);
 void page_fault(Registers *regs);
 
+extern Page_Directory *kernel_directory;
+extern Page_Directory *current_directory;
 #endif // KERNEL_PAGING_H

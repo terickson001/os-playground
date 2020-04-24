@@ -4,6 +4,7 @@
 #include "../cpu/types.h"
 
 #include "../libc/mem.h"
+#include "../libc/string.h"
 
 // Private Procedure Declarations
 int get_cursor_offset();
@@ -42,6 +43,13 @@ void kprint_at(char *message, int col, int row)
 void kprint(char *message)
 {
     kprint_at(message, -1, -1);
+}
+
+void kprint_hex(u32 hex)
+{
+    char str[9];
+    hex_to_ascii(hex, str);
+    kprint("0x"); kprint(str);
 }
 
 void kprint_backspace()

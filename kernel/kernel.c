@@ -20,19 +20,6 @@ void term_execute()
         kprint("Stopping the CPU. Bye!\n");
         asm volatile("hlt");
     }
-    else if (strcmp(termbuf, "page") == 0)
-    {
-        u32 phys_addr = 0x0;
-        u32 page = kmalloc_ap(0x1000, &phys_addr);
-        char page_str[16] = "";
-        hex_to_ascii(page, page_str);
-        char phys_str[16] = "";
-        hex_to_ascii(phys_addr, phys_str);
-        kprint("Page: ");
-        kprint(page_str);
-        kprint(", physical address: ");
-        kprint(phys_str);
-    }
     else if (strcmp(termbuf, "clear") == 0)
     {
         clear_screen();
@@ -80,7 +67,19 @@ void kernel_main()
     kprint("Type something, it will go through the kernel\n"
            "Type `exit` to halt the CPU or `page` to request a kmalloc()\n"
            "> ");
+    
+    u32 a = kmalloc(8);
     init_paging();
     
-    kprint("Did We Fault?\n");
+    u32 b = kmalloc(8);
+    u32 c = kmalloc(8);
+    kprint("a: ");   kprint_hex(a);
+    kprint("\nb: "); kprint_hex(b);
+    kprint("\nc: "); kprint_hex(c);
+    
+    kfree(c);
+    kfree(b);
+    u32 d = kmalloc(12);
+    kprint("\nd: "); kprint_hex(d);
+    
 }
