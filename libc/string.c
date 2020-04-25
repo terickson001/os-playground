@@ -1,20 +1,32 @@
 #include "string.h"
 
-i32 strlen(char *str)
+isize strlen(char *str)
 {
     i32 len = 0;
     while (*str++) len++;
     return len;
 }
 
-i32 strcmp(char *a, char *b)
+isize strcmp(char *a, char *b)
 {
     int i;
     for (i = 0; a[i] == b[i]; i++)
-    {
         if (!a[i]) return 0;
-    }
     return a[i] - b[i];
+}
+
+void strcpy(char *dest, char *src)
+{
+    while (*src)
+        *(dest++) = *(src++);
+    *dest = 0;
+}
+
+void strncpy(char *dest, char *src, u32 n)
+{
+    while (src[i] && i < n)
+        dest[i] = src[i++];
+    dest[i] = 0;
 }
 
 void reverse(char *str)
@@ -38,7 +50,7 @@ void int_to_ascii(int n, char *str)
     {
         str[i++] = n % 10 + '0';
     } while (n /= 10);
-
+    
     if (sign < 0) str[i++] = '-';
     str[i] = 0;
     
@@ -57,7 +69,7 @@ void hex_to_ascii(u32 n, char *str)
         else
             str[i++] = '7' + digit;
     } while (n /= 16);
-
+    
     str[i] = 0;
     reverse(str);
 }

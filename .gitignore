@@ -7,19 +7,21 @@
 !linker.ld
     
 !kernel
-!kernel/*
+!kernel/**
     
 !libc
-!libc/*
+!libc/**
     
-!boot
-!boot/*
-boot/boot.bin
-
 !cpu
 !cpu/*
     
 !drivers
-!drivers/*
+!drivers/**
+
+!initrd
+!initrd/**
+
+!util
+!util/**
         
 *#*

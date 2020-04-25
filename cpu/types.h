@@ -14,6 +14,7 @@ typedef uint8_t   u8;
 typedef int8_t    i8;
 typedef size_t    usize;
 typedef ptrdiff_t isize;
+typedef unsigned int uint;
 
 typedef i8  b8;
 typedef i16 b16;

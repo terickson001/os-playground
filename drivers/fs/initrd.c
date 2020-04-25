@@ -1,0 +1,2 @@
+#include "initrd.h"
+
