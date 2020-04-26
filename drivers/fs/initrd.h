@@ -2,6 +2,7 @@
 #define FS_INITRD_H
 
 #include <cpu/types.h>
+#include <kernel/fs.h>
 
 typedef struct Initrd_Header
 {
@@ -16,4 +17,5 @@ typedef struct Initrd_Entry
     usize len;
 } Initrd_Entry;
 
+File_System_Node *init_initrd(usize location);
 #endif // FS_INITRD_H

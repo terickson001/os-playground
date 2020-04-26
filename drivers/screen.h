@@ -1,7 +1,8 @@
 #ifndef _KERNEL_SCREEN_H_
 #define _KERNEL_SCREEN_H_
-#include "../cpu/types.h"
-#include "../libc/string.h"
+
+#include <cpu/types.h>
+#include <libc/string.h>
 
 #define VIDEO_ADDRESS ((char*)0xb8000)
 

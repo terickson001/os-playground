@@ -1,7 +1,7 @@
 #ifndef _KERNEL_PORT_H_
 #define _KERNEL_PORT_H_
 
-#include "../cpu/types.h"
+#include <cpu/types.h>
 
 u8 port_byte_in (u16 port);
 void port_byte_out(u16 port, u8 data);

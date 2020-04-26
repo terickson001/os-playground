@@ -1,4 +1,4 @@
-#include "port.h"
+#include <cpu/port.h>
 
 /**
  * Read a byte from the specified port
@@ -6,7 +6,7 @@
 u8 port_byte_in (u16 port)
 {
     u8 result;
-
+    
     asm("in %%dx, %%al" : "=a" (result) : "d" (port));
     return result;
 }

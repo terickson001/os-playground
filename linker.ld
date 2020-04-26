@@ -3,7 +3,7 @@ SECTIONS
 {
 	. = 1M;
  
-	.rodata BLOCK(4K) : ALIGN(4K)
+	.boot :
 	{
 		*(.multiboot)
 	}
@@ -23,12 +23,14 @@ SECTIONS
 	{
 		data = .;
 		*(.data)
+		edata = .;
 	}
  
 	.bss BLOCK(4K) : ALIGN(4K)
 	{
         sbss = .;
 		*(.bss)
+		ebss = .;
 	}
 
 	end_kernel = .;

@@ -1,8 +1,8 @@
 #ifndef KERNEL_PAGING_H
 #define KERNEL_PAGING_H
 
-#include "../cpu/types.h"
-#include "../cpu/isr.h"
+#include <cpu/types.h>
+#include <cpu/isr.h>
 
 // Paging Types
 typedef u32 Page_Frame;
@@ -61,7 +61,7 @@ u32 kmalloc_p(u32 sz, u32 *phys);
 u32 kmalloc_ap(u32 sz, u32 *phys);
 u32 kmalloc(u32 sz);
 
-void kfree(void *p);
+void kfree(u32 p);
 
 void init_paging();
 Page *get_page(u32 address, b32 make, Page_Directory *dir);

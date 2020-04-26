@@ -1,4 +1,4 @@
-#include "string.h"
+#include <libc/string.h>
 
 isize strlen(char *str)
 {
@@ -22,11 +22,12 @@ void strcpy(char *dest, char *src)
     *dest = 0;
 }
 
-void strncpy(char *dest, char *src, u32 n)
+/* Why */
+void strncpy(char *dest, char *src, usize n)
 {
-    while (src[i] && i < n)
-        dest[i] = src[i++];
-    dest[i] = 0;
+    usize i;
+    for (i = 0; (dest[i] = src[i]) && i < n; i++);
+    for (; i < n; dest[i++] = 0);
 }
 
 void reverse(char *str)

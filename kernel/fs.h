@@ -1,7 +1,9 @@
 #ifndef DRIVERS_FS_H
 #define DRIVERS_FS_H
 
-#include "../cpu/types.h"
+#include <cpu/types.h>
+
+struct File_System_Node;
 
 #define FS_READ_PROC(NAME) \
 isize NAME(struct File_System_Node *node , usize offset, usize size, byte *buffer)
@@ -12,9 +14,9 @@ int NAME(struct File_System_Node *node, b8 read, b8 write)
 #define FS_CLOSE_PROC(NAME) \
 int NAME(struct File_System_Node *node)
 #define FS_READ_DIR_PROC(NAME) \
-struct *Directory_Entry NAME(struct File_System_Node *node, usize index)
+struct Directory_Entry *NAME(struct File_System_Node *node, usize index)
 #define FS_FIND_DIR_PROC(NAME) \
-struct *File_System_Node NAME(struct File_System_Node *node, char *name)
+struct File_System_Node *NAME(struct File_System_Node *node, char *name)
 
 typedef FS_READ_PROC(File_System_Read);
 typedef FS_WRITE_PROC(File_System_Write);
@@ -66,7 +68,7 @@ typedef enum File_System_Flag
     // Flags
     FS_MOUNTPOINT  = 0x08,
 } File_System_Flag;
-#define FS_NODE_TYPE(NODE) ((NODE) & 0x7)
+#define FS_NODE_TYPE(NODE) ((NODE->flags) & 0x7)
 
 extern File_System_Node *fs_root;
 

@@ -1,4 +1,4 @@
-#include "fs.h"
+#include <kernel/fs.h>
 
 File_System_Node *fs_root = 0;
 
@@ -21,13 +21,17 @@ FS_WRITE_PROC(fs_write)
 FS_OPEN_PROC(fs_open)
 {
     if (node->interface->open)
-        node->interface->open(node, read, write);
+        return node->interface->open(node, read, write);
+    else
+        return 0;
 }
 
 FS_CLOSE_PROC(fs_close)
 {
     if (node->interface->close)
-        node->interface->close(node);
+        return node->interface->close(node);
+    else
+        return 0;
 }
 
 FS_READ_DIR_PROC(fs_read_dir)
@@ -35,6 +39,8 @@ FS_READ_DIR_PROC(fs_read_dir)
     if (FS_NODE_TYPE(node) == FS_DIRECTORY &&
         node->interface->read_dir)
         return node->interface->read_dir(node, index);
+    else
+        return 0;
 }
 
 FS_FIND_DIR_PROC(fs_find_dir)
@@ -42,4 +48,6 @@ FS_FIND_DIR_PROC(fs_find_dir)
     if (FS_NODE_TYPE(node) == FS_DIRECTORY &&
         node->interface->find_dir)
         return node->interface->find_dir(node, name);
+    else
+        return 0;
 }

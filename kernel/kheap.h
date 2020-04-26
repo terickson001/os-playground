@@ -1,8 +1,8 @@
 #ifndef KERNEL_KHEAP_H
 #define KERNEL_KHEAP_H
 
-#include "../cpu/types.h"
-#include "ordered_array.h"
+#include <cpu/types.h>
+#include <kernel/ordered_array.h>
 
 #define KHEAP_START        0xC0000000
 #define KHEAP_INITIAL_SIZE 0x100000

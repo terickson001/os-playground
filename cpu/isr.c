@@ -1,12 +1,12 @@
-#include "isr.h"
-#include "idt.h"
-#include "port.h"
-#include "timer.h"
+#include <cpu/isr.h>
+#include <cpu/idt.h>
+#include <cpu/port.h>
+#include <cpu/timer.h>
 
-#include "../drivers/screen.h"
-#include "../drivers/keyboard.h"
+#include <drivers/screen.h>
+#include <drivers/keyboard.h>
 
-#include "../libc/string.h"
+#include <libc/string.h>
 
 #define PIC1     0x20     // Base address of the master PIC
 #define PIC1_CMD PIC1
@@ -182,12 +182,9 @@ void register_interrupt_handler(u8 n, ISR *handler)
 
 void irq_handler(Registers *r)
 {
-    /* After every interrupt we need to send an EOIO to the PICs
-     * or they will not send another interrupt again */
     if (r->int_no >= 0x28) port_byte_out(PIC2_CMD, 0x20); // Slave
     port_byte_out(PIC1_CMD, 0x20); // Master
     
-    // Handle interrupt in a more modular way
     if (interrupt_handlers[r->int_no])
     {
         ISR *handler = interrupt_handlers[r->int_no];

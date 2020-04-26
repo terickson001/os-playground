@@ -1,7 +1,7 @@
 #ifndef KERNEL_ORDERED_ARRAY_H
 #define KERNEL_ORDERED_ARRAY_H
 
-#include "../cpu/types.h"
+#include <cpu/types.h>
 
 typedef i32 Compare_Proc(void *a, void *b);
 typedef struct Ordered_Array

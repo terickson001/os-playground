@@ -1,9 +1,12 @@
+#include <kernel/paging.h>
 
-#include "paging.h"
-#include "../libc/mem.h"
-#include "../libc/string.h"
-#include "../drivers/screen.h"
-#include "kheap.h"
+#include <libc/mem.h>
+#include <libc/string.h>
+#include <libc/function.h>
+
+#include <drivers/screen.h>
+
+#include <kernel/kheap.h>
 
 #define STRING_(x) #x
 #define STRING(x) STRING_(x)
@@ -25,7 +28,7 @@ u32 *frames;
 u32 nframes;
 
 extern u32 end_kernel;
-u32 placement_address = (u32)&end_kernel;
+u32 placement_address = 0;
 
 #define INDEX_FROM_BIT(a)  (a/(32))
 #define OFFSET_FROM_BIT(a) (a%(32))
@@ -51,9 +54,9 @@ u32 kmalloc_p(u32 sz, u32 *phys)  { return kmalloc_int(sz, false, phys); }
 u32 kmalloc_ap(u32 sz, u32 *phys) { return kmalloc_int(sz, true, phys);  }
 u32 kmalloc(u32 sz)               { return kmalloc_int(sz, false, 0);    }
 
-void kfree(void *p)
+void kfree(u32 p)
 {
-    if (kheap) free(p, kheap);
+    if (kheap) free((void *)p, kheap);
 }
 // Bit Set
 static void set_frame_used(u32 frame_addr)
@@ -151,7 +154,8 @@ Page *get_page(u32 address, b32 make, Page_Directory *dir)
 
 void init_paging()
 {
-    placement_address = (u32)&end_kernel;
+    if (!placement_address)
+        placement_address = (u32)&end_kernel;
     
     u32 mem_end_page = 0x1000000; // End of memory (Assume 16MiB for now)
     
@@ -209,6 +213,7 @@ void page_fault(Registers *regs)
     b32 us = regs->err_code & 0x04; // User Mode?
     b32 reserved = regs->err_code & 0x08; // CPU-Reserved
     b32 id = regs->err_code & 0x10; // Instruction fetch?
+    UNUSED(id);
     
     kprint("Page fault! ( ");
     if (present) kprint("present ");

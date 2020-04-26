@@ -13,13 +13,21 @@
 !libc/**
     
 !cpu
-!cpu/*
+!cpu/**
     
 !drivers
 !drivers/**
 
 !initrd
 !initrd/**
+
+!boot
+!boot/**
+
+!isofiles
+!isofiles/boot
+!isofiles/boot/grub
+!isofiles/boot/grub/grub.cfg
 
 !util
 !util/**

@@ -1,5 +1,5 @@
-#include "mem.h"
-#include "../kernel/kernel.h"
+#include <libc/mem.h>
+#include <kernel/kernel.h>
 
 void memory_copy(void *dest, void *src, int n)
 {

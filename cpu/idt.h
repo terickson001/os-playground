@@ -1,7 +1,7 @@
 #ifndef _CPU_IDT_H_
 #define _CPU_IDT_H_
 
-#include "types.h"
+#include <cpu/types.h>
 
 /* Segment Selectors */
 #define KERNEL_CS 0x08

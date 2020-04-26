@@ -1,14 +1,14 @@
-#include "keyboard.h"
-#include "screen.h"
+#include <drivers/keyboard.h>
+#include <drivers/screen.h>
 
-#include "../cpu/port.h"
-#include "../cpu/isr.h"
+#include <cpu/port.h>
+#include <cpu/isr.h>
 
-#include "../libc/string.h"
-#include "../libc/mem.h"
-#include "../libc/function.h"
+#include <libc/string.h>
+#include <libc/mem.h>
+#include <libc/function.h>
 
-#include "../kernel/kernel.h"
+#include <kernel/kernel.h>
 
 static Keyboard_State STATE = {0};
 static Keyboard_Hook *key_hooks[256];

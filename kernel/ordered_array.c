@@ -1,7 +1,8 @@
-#include "ordered_array.h"
-#include "paging.h"
-#include "kheap.h"
-#include "../libc/mem.h"
+#include <kernel/ordered_array.h>
+#include <kernel/paging.h>
+#include <kernel/kheap.h>
+
+#include <libc/mem.h>
 
 i32 standard_comparison(void *a, void *b)
 {
@@ -36,7 +37,7 @@ Ordered_Array place_ordered_array(void *addr, u32 cap, Compare_Proc *cmp)
 
 void destroy_ordered_array(Ordered_Array *arr)
 {
-    // free(arr->data);
+    kfree((u32)arr->data);
 }
 
 void ordered_array_insert(Ordered_Array *arr, void *v)

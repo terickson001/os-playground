@@ -92,7 +92,7 @@ int main(int argc, char **argv)
         fclose(file);
     }
     
-    FILE *img = fopen("initrd.img", "w");
+    FILE *img = fopen("isofiles/boot/initrd.img", "w");
     fwrite(data, 1, total_size, img);
     fclose(img);
     

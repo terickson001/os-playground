@@ -1,7 +1,7 @@
 #ifndef _DRIVER_KEYBOARD_H_
 #define _DRIVER_KEYBOARD_H_
 
-#include "../cpu/types.h"
+#include <cpu/types.h>
 
 typedef struct Keyboard_State
 {

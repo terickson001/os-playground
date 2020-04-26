@@ -1,10 +1,10 @@
-#include "screen.h"
+#include <drivers/screen.h>
 
-#include "../cpu/port.h"
-#include "../cpu/types.h"
+#include <cpu/port.h>
+#include <cpu/types.h>
 
-#include "../libc/mem.h"
-#include "../libc/string.h"
+#include <libc/mem.h>
+#include <libc/string.h>
 
 // Private Procedure Declarations
 int get_cursor_offset();

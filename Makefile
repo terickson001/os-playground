@@ -3,28 +3,38 @@ GDB = /usr/local/i386elfgcc/bin/i386-elf-gdb
 
 ODIR = obj
 
-VPATH = boot:kernel:drivers:cpu:libc
+# Returns unique strings from list
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 
-SRCS = $(filter-out, util/*, $(wildcard **/*.c **/*.asm)
-DEPS = $(wildcard **/*.h)
+SRCS_ := $(shell find . -regex ".*\.\(c\|asm\)" -printf "%P ")
+SRCS := $(filter-out $(wildcard util/*), $(SRCS_))
+DEPS := $(shell find . -regex ".*\.h" -printf "%P ")
 
-OBJS=$(addprefix $(ODIR)/, $(patsubst %.c,%.o,$(patsubst %.asm,%.o,$(notdir $(SRCS)))))
+VPATH := $(patsubst %/,%,$(realpath $(call uniq,$(dir $(SRCS_)))))
 
-CFLAGS = -g3 -m32 -fno-builtin -fno-exceptions -Wall -Wextra -I.
+OBJS = $(addprefix $(ODIR)/, $(patsubst %.c,%.o,$(patsubst %.asm,%.o,$(notdir $(SRCS)))))
 
+WARN = -Wall -Wextra
+NOWARN = -Wno-unused-function
+CFLAGS = -g3 -m32 -fno-builtin -fno-exceptions ${WARN} ${NOWARN} -I.
 
+BINARY = isofiles/boot/kernel.elf
+MODULES = $(addprefix isofiles/boot/, initrd.img)
 ##### Kernel #####
 
-kernel.elf: ${OBJS}
-	i386-elf-ld -T linker.ld -nostdlib -g -o kernel.elf $^
+os.img: ${BINARY} ${MODULES} isofiles/boot/grub/grub.cfg
+	grub-mkrescue -o $@ isofiles
 
-run: kernel.elf
-	qemu-system-i386 -kernel kernel.elf
+${BINARY}: ${OBJS}
+	i386-elf-ld -T linker.ld -nostdlib -g -o $@ $^
 
-debug: kernel.elf
-	qemu-system-i386 -s -S -kernel kernel.elf -d guest_errors,int &
+run: os.img
+	qemu-system-i386 -no-reboot -no-shutdown -cdrom $<
+
+debug: os.img
+	qemu-system-i386 -s -S -cdrom $< -d guest_errors,int &
 	sleep 0.2
-	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+	gdb -ex "target remote localhost:1234" -ex "symbol-file ${BINARY}"
 
 
 ##### Utils #####
@@ -32,8 +42,8 @@ CC_UTIL = gcc
 CFLAGS_UTIL = -g3 -Wall -Wextra -I. -m32
 
 INITRD_FILES = $(wildcard initrd/*)
-initrd: mkinitrd ${INITRD_FILES}
-	mkinitrd ${INITRD_FILES}
+isofiles/boot/initrd.img: mkinitrd ${INITRD_FILES}
+	./mkinitrd ${INITRD_FILES}
 
 mkinitrd: util/mkinitrd.c ${DEPS}
 	${CC_UTIL} ${CFLAGS_UTIL} $< -o $@
@@ -47,4 +57,4 @@ ${ODIR}/%.o: %.asm
 	nasm $< -f elf -g -o $@
 
 clean:
-	rm -rf *.bin *.dis ${ODIR}/*.o os-image.bin *.elf
+	rm -rf *.bin *.dis ${ODIR}/*.o *.elf

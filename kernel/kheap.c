@@ -1,6 +1,6 @@
-#include "kheap.h"
-#include "paging.h"
-#include "../drivers/screen.h"
+#include <kernel/kheap.h>
+#include <kernel/paging.h>
+#include <drivers/screen.h>
 
 Heap *kheap = 0;
 
