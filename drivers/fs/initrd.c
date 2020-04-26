@@ -110,7 +110,7 @@ File_System_Node *init_initrd(usize location)
     {
         initrd_entries[i].off += location;
         
-        strcpy(root_nodes[i].name, "dev");
+        strcpy(root_nodes[i].name, initrd_entries[i].name);
         root_nodes[i].flags = FS_FILE;
         root_nodes[i].interface = &initrd_interface;
         root_nodes[i].size = initrd_entries[i].len;

@@ -6,6 +6,7 @@
 #include <libc/mem.h>
 #include <libc/string.h>
 
+#define TTY_TAB_WIDTH 4
 // Private Procedure Declarations
 int get_cursor_offset();
 void set_cursor_offset(int offset);
@@ -111,6 +112,10 @@ int print_char(char c, int col, int row, char attr)
     {
         row = get_offset_row(offset);
         offset = get_offset(0, row+1);
+    }
+    else if (c == '\t')
+    {
+        offset += TTY_TAB_WIDTH*2;
     }
     else if (c == 0x08) // BACKSPACE
     {

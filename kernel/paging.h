@@ -54,6 +54,7 @@ typedef struct Page_Directory
 {
     Page_Table *tables[1024];
     Page_Directory_Entry entries[1024];
+    u32 address;
 } Page_Directory;
 
 u32 kmalloc_a(u32 sz);

@@ -72,11 +72,11 @@ typedef enum File_System_Flag
 
 extern File_System_Node *fs_root;
 
-FS_READ_PROC(fs_read);
-FS_WRITE_PROC(fs_write);
-FS_OPEN_PROC(fs_open);
-FS_CLOSE_PROC(fs_close);
-FS_READ_DIR_PROC(fs_read_dir);
-FS_FIND_DIR_PROC(fs_find_dir);
+isize fs_read(struct File_System_Node *node , usize offset, usize size, byte *buffer);
+isize fs_write(struct File_System_Node *node, usize offset, usize size, byte *buffer);
+int fs_open(struct File_System_Node *node, b8 read, b8 write);
+int fs_close(struct File_System_Node *node);
+Directory_Entry *fs_read_dir(struct File_System_Node *node, usize index);
+File_System_Node *fs_find_dir(struct File_System_Node *node, char *name);
 
 #endif // DRIVERS_FS_H

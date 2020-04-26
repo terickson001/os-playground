@@ -61,14 +61,6 @@ void term_input(Kbd_Event e)
     }
 }
 
-/*
-void serial_write(u8 data)
-{
-    while((port_byte_in(COM1 + 5) & 0x20) == 0);
-    port_byte_out(COM1, data);
-}
-*/
-
 void kernel_main(u32 magic, Multiboot *mb)
 {
     
@@ -103,11 +95,11 @@ void kernel_main(u32 magic, Multiboot *mb)
         kprint(node->name);
         File_System_Node *fsnode = fs_find_dir(fs_root, node->name);
         
-        if ((fsnode->flags&0x7) == FS_DIRECTORY)
+        if (FS_NODE_TYPE(fsnode) == FS_DIRECTORY)
             kprint("\n\t(directory)\n");
         else
         {
-            kprint("\n\t contents: \"");
+            kprint("\n     contents: \"");
             char buf[256];
             u32 sz = fs_read(fsnode, 0, 255, (byte *)buf);
             buf[sz] = 0;

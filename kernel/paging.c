@@ -58,6 +58,7 @@ void kfree(u32 p)
 {
     if (kheap) free((void *)p, kheap);
 }
+
 // Bit Set
 static void set_frame_used(u32 frame_addr)
 {
@@ -123,6 +124,34 @@ void free_frame(Page *page)
         return;
     set_frame_free(frame);
     page->frame = 0x0;
+}
+
+#define FIELD_OFFSET(STRUCT, FIELD) ((u32)&((STRUCT)->(field)) - (u32)(STRUCT))
+
+Page_Directory *clone_page_directory(Page_Directory *src)
+{
+    u32 phys;
+    Page_Directory *dest = (Page_Directory *)kmalloc_ap(sizeof(Page_Directory), &phys);
+    memory_set(dest, 0, sizeof(Page_Directory));
+    
+    u32 offset = FIELD_OFFSET(dest, entries);
+    dest->address = phys + offset;
+    for (int i = 0; i < 1024; i++)
+    {
+        if (!src->tables[i])
+            continue;
+        if (kernel_directory->tables[i] == src->tables[i]) // Leave Kernel Tables
+        {
+            dest->tables[i] = src->tables[i];
+            dest->entries[i] = src->Entries[i];
+        }
+        else // Copy Everything else
+        {
+            u32 phys;
+            dir->tables[i] = clone_table(src->tables[i], &phys);
+            dir->entries[i] = phys | 0x07;
+        }
+    }
 }
 
 extern void load_page_directory(u32 *page_directory);
