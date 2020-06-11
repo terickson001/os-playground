@@ -8,6 +8,10 @@
 
 #include <kernel/kheap.h>
 
+extern void load_page_directory(u32 *page_directory);
+extern void enable_paging();
+extern void copy_page_frame();
+
 #define STRING_(x) #x
 #define STRING(x) STRING_(x)
 #define PANIC(msg) \
@@ -22,6 +26,7 @@ while(true){}; \
 
 extern Heap *kheap;
 
+;
 Page_Directory *kernel_directory = 0;
 Page_Directory *current_directory = 0;
 u32 *frames;
@@ -35,7 +40,16 @@ u32 placement_address = 0;
 
 u32 kmalloc_int(u32 sz, b32 align, u32 *phys)
 {
-    if (kheap) return (u32)alloc(sz, align, kheap);
+    if (kheap)
+    {
+        u32 addr = (u32)alloc(sz, align, kheap);
+        if (phys)
+        {
+            Page *page = get_page((u32)addr, 0, kernel_directory);
+            *phys = page->frame*0x1000 + ((u32)addr&0xFFF);
+        }
+        return addr;
+    }
     
     if (align == 1 && (placement_address & 0xFFF)) // Not Aligned?
     {
@@ -126,7 +140,29 @@ void free_frame(Page *page)
     page->frame = 0x0;
 }
 
-#define FIELD_OFFSET(STRUCT, FIELD) ((u32)&((STRUCT)->(field)) - (u32)(STRUCT))
+#define FIELD_OFFSET(STRUCT, FIELD) ((u32)((STRUCT)->FIELD) - (u32)(STRUCT))
+
+Page_Table *clone_page_table(Page_Table *src, u32 *phys)
+{
+    Page_Table *dest = (Page_Table *)kmalloc_ap(sizeof(Page_Table), phys);
+    memory_set(dest, 0, sizeof(Page_Table));
+    
+    for (int i = 0; i < 1024; i++)
+    {
+        if (!src->pages[i].frame)
+            continue;
+        
+        alloc_frame(&dest->pages[i], 0, 0);
+        dest->pages[i].present  = src->pages[i].present;
+        dest->pages[i].rw       = src->pages[i].rw;
+        dest->pages[i].user     = src->pages[i].user;
+        dest->pages[i].accessed = src->pages[i].accessed;
+        dest->pages[i].dirty    = src->pages[i].dirty;
+        
+        copy_page_frame(src->pages[i].frame*0x1000, dest->pages[i].frame*0x1000);
+    }
+    return dest;
+}
 
 Page_Directory *clone_page_directory(Page_Directory *src)
 {
@@ -134,7 +170,7 @@ Page_Directory *clone_page_directory(Page_Directory *src)
     Page_Directory *dest = (Page_Directory *)kmalloc_ap(sizeof(Page_Directory), &phys);
     memory_set(dest, 0, sizeof(Page_Directory));
     
-    u32 offset = FIELD_OFFSET(dest, entries);
+    u32 offset = (u32)dest->entries - (u32)dest; //FIELD_OFFSET(dest, entries);
     dest->address = phys + offset;
     for (int i = 0; i < 1024; i++)
     {
@@ -143,19 +179,18 @@ Page_Directory *clone_page_directory(Page_Directory *src)
         if (kernel_directory->tables[i] == src->tables[i]) // Leave Kernel Tables
         {
             dest->tables[i] = src->tables[i];
-            dest->entries[i] = src->Entries[i];
+            dest->entries[i] = src->entries[i];
         }
         else // Copy Everything else
         {
             u32 phys;
-            dir->tables[i] = clone_table(src->tables[i], &phys);
-            dir->entries[i] = phys | 0x07;
+            dest->tables[i] = clone_page_table(src->tables[i], &phys);
+            dest->entries[i].raw = phys | 0x7;
         }
     }
+    return dest;
 }
 
-extern void load_page_directory(u32 *page_directory);
-extern void enable_paging();
 
 Page *get_page(u32 address, b32 make, Page_Directory *dir)
 {
@@ -181,6 +216,12 @@ Page *get_page(u32 address, b32 make, Page_Directory *dir)
     }
 }
 
+Page_Directory *create_address_space()
+{
+    Page_Directory *directory = (Page_Directory *)kalloc(sizeof(Page_Directory));
+    
+}
+
 void init_paging()
 {
     if (!placement_address)
@@ -194,10 +235,8 @@ void init_paging()
     
     kernel_directory = (Page_Directory *)kmalloc_a(sizeof(Page_Directory));
     memory_set(kernel_directory, 0, sizeof(Page_Directory));
-    // RW, not present, not user
-    for (int i =  0; i < 1024; i++)
-        kernel_directory->entries[i].raw = 0x00000002;
-    current_directory = kernel_directory;
+    kernel_directory->address = (u32)kernel_directory->entries;
+    
     u32 i;
     
     // Create the page tables for the kheap
@@ -224,12 +263,14 @@ void init_paging()
         i += 0x1000;
     }
     
-    
     register_interrupt_handler(14, page_fault);
-    load_page_directory((u32*)&kernel_directory->entries);
+    load_page_directory((u32*)kernel_directory->address);
     enable_paging();
     
     kheap = make_heap(KHEAP_START, KHEAP_START+KHEAP_INITIAL_SIZE, 0xCFFFF000, false, false);
+    
+    current_directory = clone_page_directory(kernel_directory);
+    load_page_directory((u32*)current_directory->address);
 }
 
 void page_fault(Registers *regs)
@@ -244,15 +285,12 @@ void page_fault(Registers *regs)
     b32 id = regs->err_code & 0x10; // Instruction fetch?
     UNUSED(id);
     
-    kprint("Page fault! ( ");
-    if (present) kprint("present ");
-    if (rw) kprint("read-only ");
-    if (us) kprint("user-mode ");
-    if (reserved) kprint("reserved ");
-    kprint(") at 0x");
-    char hex_addr[16] = "";
-    hex_to_ascii(faulting_address, hex_addr);
-    kprint(hex_addr);
-    kprint("\n");
+    kprintf("Page fault! ( %s%s%s%s) at 0x%X\n",
+            present ?"present "  :0,
+            rw      ?"read-only ":0,
+            us      ?"user-mode ":"",
+            reserved?"reserved " :"",
+            faulting_address);
+    dump_registers(regs);
     PANIC("Page fault");
 }

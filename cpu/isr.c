@@ -202,3 +202,22 @@ void iqr_install()
     // IRQ 1
     init_keyboard();
 }
+
+
+void dump_registers(Registers *regs)
+{
+    kprintf("Interrupt Info: \n"
+            "\tEAX: .......... 0x%X\n"
+            "\tEBX: .......... 0x%X\n"
+            "\tECX: .......... 0x%X\n"
+            "\tEDX: .......... 0x%X\n"
+            "\tESP: .......... 0x%X\n"
+            "\tEIP: .......... 0x%X\n"
+            "\tCS: ........... 0x%X\n"
+            "\tInterrupt: .... 0x%X\n"
+            "\tError Code: ... 0x%X\n"
+            "\tEFLAGS: ....... 0x%X\n",
+            regs->eax, regs->ebx, regs->ecx, regs->edx,
+            regs->esp, regs->eip, regs->cs,
+            regs->int_no, regs->err_code, regs->eflags);
+}

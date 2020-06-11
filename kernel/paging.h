@@ -4,6 +4,7 @@
 #include <cpu/types.h>
 #include <cpu/isr.h>
 
+extern void flush_tlb();
 // Paging Types
 typedef u32 Page_Frame;
 typedef union Page_Table_Entry
@@ -69,7 +70,9 @@ Page *get_page(u32 address, b32 make, Page_Directory *dir);
 void alloc_frame(Page *page, b32 is_kernel, b32 is_writeable);
 void free_frame(Page *page);
 void page_fault(Registers *regs);
+Page_Directory *clone_page_directory(Page_Directory *src);
 
 extern Page_Directory *kernel_directory;
 extern Page_Directory *current_directory;
+
 #endif // KERNEL_PAGING_H

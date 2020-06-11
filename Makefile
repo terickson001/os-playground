@@ -12,11 +12,11 @@ DEPS := $(shell find . -regex ".*\.h" -printf "%P ")
 
 VPATH := $(patsubst %/,%,$(realpath $(call uniq,$(dir $(SRCS_)))))
 
-OBJS = $(addprefix $(ODIR)/, $(patsubst %.c,%.o,$(patsubst %.asm,%.o,$(notdir $(SRCS)))))
+OBJS = $(addprefix $(ODIR)/, $(patsubst %.c,%.o,$(patsubst %.asm,%.asm.o,$(notdir $(SRCS)))))
 
 WARN = -Wall -Wextra
 NOWARN = -Wno-unused-function
-CFLAGS = -g3 -m32 -fno-builtin -fno-exceptions ${WARN} ${NOWARN} -I.
+CFLAGS = -lgcc -ffreestanding -g3 -m32 -fno-builtin -fno-exceptions ${WARN} ${NOWARN} -I.
 
 BINARY = isofiles/boot/kernel.elf
 MODULES = $(addprefix isofiles/boot/, initrd.img)
@@ -26,13 +26,13 @@ os.img: ${BINARY} ${MODULES} isofiles/boot/grub/grub.cfg
 	grub-mkrescue -o $@ isofiles
 
 ${BINARY}: ${OBJS}
-	i386-elf-ld -T linker.ld -nostdlib -g -o $@ $^
+	i386-elf-gcc -T linker.ld -O2 -nostdlib -g -o $@ $^
 
 run: os.img
 	qemu-system-i386 -no-reboot -no-shutdown -cdrom $<
 
 debug: os.img
-	qemu-system-i386 -s -S -cdrom $< -d guest_errors,int &
+	qemu-system-i386 -s -S -no-reboot -no-shutdown -cdrom $< -d guest_errors,int &
 	sleep 0.2
 	gdb -ex "target remote localhost:1234" -ex "symbol-file ${BINARY}"
 
@@ -53,7 +53,7 @@ mkinitrd: util/mkinitrd.c ${DEPS}
 ${ODIR}/%.o: %.c ${DEPS}
 	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
 
-${ODIR}/%.o: %.asm
+${ODIR}/%.asm.o: %.asm
 	nasm $< -f elf -g -o $@
 
 clean:

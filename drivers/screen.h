@@ -19,6 +19,7 @@
 /* Public kernel API */
 void kprint_at(char *message, int col, int row);
 void kprint(char *message);
+void kprintf(char *fmt, ...);
 void kprint_hex(u32 hex);
 void clear_screen();
 void kprint_backspace();

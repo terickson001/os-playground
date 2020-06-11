@@ -1,8 +1,10 @@
+#include <kernel/task.h>
+
 #include <cpu/timer.h>
 #include <cpu/isr.h>
 #include <cpu/port.h>
 
-#include <drivers/screen.h>
+#include <drivers/serial.h>
 
 #include <libc/function.h>
 
@@ -12,6 +14,7 @@ static void timer_callback(Registers *regs)
 {
     UNUSED(regs);
     tick++;
+    // task_switch();
 }
 
 void init_timer(u32 freq)

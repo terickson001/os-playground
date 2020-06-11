@@ -1,12 +1,13 @@
 [extern isr_handler]
 [extern irq_handler]
 
+%include "boot/gdt.asm"
 isr_common_stub:
 ;; Save CPU state
-pusha                       ; Push edi,esi,ebp,esp,ebx,edx,ecx,eax
+pushad                      ; Push edi,esi,ebp,esp,ebx,edx,ecx,eax
 mov ax, ds                  ; Lower 16-bits of eax = ds
 push eax                    ; Save the data segment descriptor
-mov ax, 0x10                ; Kernel data segment desciptor
+mov ax, DATA_SEG                ; Kernel data segment desciptor
 mov ds, ax
 mov es, ax
 mov fs, ax
@@ -24,15 +25,15 @@ mov ds, ax
 mov es, ax
 mov fs, ax
 mov gs, ax
-popa
+popad
 add esp, 8                  ; Cleans up pushed error code and pushed ISR number
 iret                        ; pops 5 things ate once: CS, EIP, EFLAGS, SS, and ESP
 
 irq_common_stub:
-pusha
+pushad
 mov ax, ds
 push eax
-mov ax, 0x10
+mov ax, DATA_SEG
 mov ds, ax
 mov es, ax
 mov fs, ax
@@ -48,7 +49,7 @@ mov ds, bx
 mov es, bx
 mov fs, bx
 mov gs, bx
-popa
+popad
 add esp, 8
 iret
 

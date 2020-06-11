@@ -6,6 +6,8 @@
 #include <libc/mem.h>
 #include <libc/string.h>
 
+#include <stdarg.h>
+
 #define TTY_TAB_WIDTH 4
 // Private Procedure Declarations
 int get_cursor_offset();
@@ -45,6 +47,28 @@ void kprint(char *message)
 {
     kprint_at(message, -1, -1);
 }
+
+void _kprintv(int n, char **strings)
+{
+    for (int i = 0; i < n; i++)
+        kprint(strings[i]);
+}
+
+void kprintf_va(char *fmt, va_list va)
+{
+    char buf[8096];
+    snprintf_va(buf, 8096, fmt, va);
+    kprint(buf);
+}
+
+void kprintf(char *fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    kprintf_va(fmt, va);
+    va_end(va);
+}
+
 
 void kprint_hex(u32 hex)
 {

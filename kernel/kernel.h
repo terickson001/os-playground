@@ -4,5 +4,6 @@
 #include <cpu/types.h>
 
 extern u32 end_kernel;
+extern u32 initial_esp;
 
 #endif

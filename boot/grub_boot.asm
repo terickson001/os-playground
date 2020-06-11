@@ -35,21 +35,21 @@ section .text
 
 _start:
 lgdt [gdt_descriptor]
-jmp CODE_SEG:update_segments
-
-update_segments:
 mov dx, DATA_SEG ; update segment registers
 mov ds, dx
 mov ss, dx
 mov es, dx
 mov fs, dx
 mov gs, dx
+jmp CODE_SEG:.flush
 
+.flush:
 mov esp, stack_top
 
 push 0
 popf
 
+push esp
 push ebx
 push eax
 call kernel_main

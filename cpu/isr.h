@@ -84,5 +84,5 @@ void isr_install();
 void register_interrupt_handler(u8 n, ISR *handler);
 
 void iqr_install();
-
+void dump_registers(Registers *regs);
 #endif
