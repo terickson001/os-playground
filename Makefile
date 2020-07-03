@@ -1,5 +1,7 @@
-CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
-GDB = /usr/local/i386elfgcc/bin/i386-elf-gdb
+CC = i686-elf-gcc
+GDB = i686-elf-gdb
+
+CC = gcc -m32 -march=i386
 
 ODIR = obj
 
@@ -26,7 +28,7 @@ os.img: ${BINARY} ${MODULES} isofiles/boot/grub/grub.cfg
 	grub-mkrescue -o $@ isofiles
 
 ${BINARY}: ${OBJS}
-	i386-elf-gcc -T linker.ld -O2 -nostdlib -g -o $@ $^
+	${CC} -T linker.ld -O2 -nostdlib -g -o $@ $^
 
 run: os.img
 	qemu-system-i386 -no-reboot -no-shutdown -cdrom $<

@@ -9,35 +9,33 @@
 
 typedef struct Thread_Ctx
 {
-    struct
-    {
-        u32 ebp;
-        u32 edi;
-        u32 esi;
-        u32 edx;
-        u32 ecx;
-        u32 ebx;
-        u32 eax;
-        u32 eip;
-        u32 cs;
-        u32 rflags;
-        u32 esp;
-        u32 ss;
-    } regs;
+    u32 ebp;
+    u32 edi;
+    u32 esi;
+    u32 edx;
+    u32 ecx;
+    u32 ebx;
+    u32 eax;
+    u32 eip;
+    u32 cs;
+    u32 rflags;
+    u32 esp;
+    u32 ss;
 } Thread_Ctx;
 
-typedef struct Task
+typedef struct Thread
 {
     u32 tid;
-    u32 process;
-    Thread_Ctx ctx;
-} Task;
+    Registers regs;
+    
+    Thread_Ctx *next;
+} Thread;
 
 typedef struct Process
 {
     u32 pid;
     Page_Directory *page_directory;
-    Task **threads;
+    Thread **threads;
 } Process;
 
 

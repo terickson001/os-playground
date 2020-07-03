@@ -69,6 +69,7 @@ void kernel_main(u32 magic, Multiboot *mb, u32 stack_addr)
     initial_esp = stack_addr;
     if (magic != 0x2BADB002)
         return;
+    
     u32 initrd_location = *((u32*)mb->mods_addr);
     u32 initrd_end = *(u32*)(mb->mods_addr+4);
     
@@ -78,7 +79,7 @@ void kernel_main(u32 magic, Multiboot *mb, u32 stack_addr)
     isr_install();
     iqr_install();
     init_paging();
-    init_tasking();
+    // init_tasking();
     
     clear_screen();
     
@@ -90,12 +91,14 @@ void kernel_main(u32 magic, Multiboot *mb, u32 stack_addr)
     
     fs_root = init_initrd(initrd_location);
     
-    int ret = fork();
-    kprint("fork() returned ");
-    kprint_hex(ret);
-    kprint(", and get_pid() returned ");
-    kprint_hex(get_pid());
-    kprint("\n============================================================================\n");
+    /*
+        int ret = fork();
+        kprint("fork() returned ");
+        kprint_hex(ret);
+        kprint(", and get_pid() returned ");
+        kprint_hex(get_pid());
+        kprint("\n============================================================================\n");
+    */
     int i = 0;
     Directory_Entry *node = 0;
     while ( (node = fs_read_dir(fs_root, i)) != 0)

@@ -218,8 +218,8 @@ Page *get_page(u32 address, b32 make, Page_Directory *dir)
 
 Page_Directory *create_address_space()
 {
-    Page_Directory *directory = (Page_Directory *)kalloc(sizeof(Page_Directory));
-    
+    Page_Directory *directory = (Page_Directory *)kmalloc(sizeof(Page_Directory));
+    return directory;
 }
 
 void init_paging()

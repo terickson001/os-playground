@@ -29,8 +29,8 @@ typedef struct IDT_Register
 } __attribute__((packed)) IDT_Register;
 
 #define IDT_ENTRIES 256
-IDT_Gate idt[IDT_ENTRIES];
-IDT_Register idt_reg;
+static IDT_Gate idt[IDT_ENTRIES];
+static IDT_Register idt_reg;
 
 void set_idt_gate(int n, u32 handler);
 void set_idt();
